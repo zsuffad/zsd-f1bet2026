@@ -426,7 +426,6 @@
             try {
                 firebaseApp = firebase.initializeApp(firebaseConfig);
                 database = firebase.database();
-                console.log('Firebase inicializálva');
 
                 // Valós idejű szinkronizáció
                 setupRealtimeSync();
@@ -454,13 +453,29 @@
             });
 
             // Races sync
-            database.ref('races').on('value', (snapshot) => {
+            database.ref('races').on('value', async (snapshot) => {
                 const data = snapshot.val();
-                if (data && JSON.stringify(data) !== JSON.stringify(races)) {
+                if (data) {
+                    // Check if bets object exists for each race, and populate if missing
+                    let updated = false;
+                    Object.keys(data).forEach((raceId) => {
+                        if (!data[raceId].bets) {
+                            data[raceId].bets = participants.reduce((bets, participant) => {
+                                bets[participant] = null; // Initialize each participant's bet to null
+                                return bets;
+                            }, {});
+                            updated = true;
+                        }
+                    });
+
+                    if (updated) {
+                        await database.ref('races').set(data);
+                    }
                     races = data;
                     render();
-                } else if (!data && races.length > 0) {
-                    // If Firebase is empty but we have local data, upload it
+                } else {
+                    // If Firebase is empty, initialize races and upload
+                    races = initializeRaces();
                     database.ref('races').set(races);
                 }
             });
@@ -641,7 +656,10 @@
         function initializeRaces() {
             return INITIAL_RACES.map(race => ({
                 ...race,
-                bets: {},
+                bets: participants.reduce((bets, participant) => {
+                    bets[participant] = null; // Initialize each participant's bet to null
+                    return bets;
+                }, {}),
                 results: {
                     sprintQualifying: race.hasSprint ? ['', '', ''] : null,
                     qualifying: ['', '', ''],
@@ -975,7 +993,7 @@
                         </thead>
                         <tbody>
                             ${racesWithResults.map(race => {
-                                const bet = race.bets[participantName];
+                                const bet = race && race.bets && Object.keys(race.bets).length > 0 ? race.bets[participantName] : undefined;
 
                                 // Calculate points for each event
                                 let sprintQualPoints = '';

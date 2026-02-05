@@ -679,7 +679,7 @@
         }
 
         function getRecordedIcons(race, participant) {
-            const bet = race.bets[participant];
+            const bet = race && race.bets && Object.keys(race.bets).length > 0 ? race.bets[participant] : undefined;
             if (!bet) return '';
 
             let icons = '';
@@ -714,7 +714,7 @@
             };
 
             races.forEach(race => {
-                const bet = race.bets[participant];
+                const bet = race && race.bets && Object.keys(race.bets).length > 0 ? race.bets[participant] : undefined;
                 if (!bet) return;
 
                 // Silver stars: qualifying and sprint events
@@ -778,7 +778,7 @@
         function calculateTotalPoints(participant) {
             let total = 0;
             races.forEach(race => {
-                const bet = race.bets[participant];
+                const bet = race && race.bets && Object.keys(race.bets).length > 0 ? race.bets[participant] : undefined;
                 if (bet) {
                     if (race.hasSprint && bet.sprintQualifying && race.results.sprintQualifying) {
                         total += calculatePointsQualifying(bet.sprintQualifying, race.results.sprintQualifying);
@@ -1509,7 +1509,7 @@
                 return `
                     <div class="space-y-3">
                         ${participants.map(participant => {
-                            const bet = race.bets[participant];
+                            const bet = race && race.bets && Object.keys(race.bets).length > 0 ? race.bets[participant] : undefined;
                             const points = calculateParticipantPoints(race, participant);
                             const betKey = `${race.id}-${participant}`;
                             const isExpanded = expandedBets[betKey];
@@ -1606,8 +1606,8 @@
 
         function renderBetInput(race, participant, category, isQualifying) {
             const isEditing = editingBet && editingBet.raceId === race.id && editingBet.participant === participant && editingBet.category === category;
-            const bet = race.bets[participant] || {};
-            const betData = bet[category] || ['', '', ''];
+            const bet = race && race.bets && Object.keys(race.bets).length > 0 ? race.bets[participant] : undefined;
+            const betData = bet && bet[category] ? bet[category] : ['', '', ''];
 
             if (!isEditing) {
                 const displayParts = [];
@@ -1758,7 +1758,8 @@
             if (!race) return;
 
             // Ha még nincs bet objektum a résztvevőnek, hozzuk létre
-            if (!race.bets[participant]) {
+            if (!race || !race.bets || Object.keys(race.bets).length < 1 ) {
+                race.bets = {};
                 race.bets[participant] = {};
             }
 

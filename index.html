@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>F1 Fogadás 2026 🏁</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        * {
+            font-family: 'Titillium Web', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: #f7f4f1;
+        }
+        
+        /* F1 stílusú gombok */
+        .f1-button {
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+        
+        .f1-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Animált nyíl */
+        .arrow-down {
+            transition: transform 0.3s ease;
+        }
+        
+        .arrow-down.rotated {
+            transform: rotate(180deg);
+        }
+        
+        /* Slide animáció */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        /* Tab label animáció mobilon */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+                max-width: 0;
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+                max-width: 150px;
+            }
+        }
+        
+        @keyframes slideOutLeft {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+                max-width: 150px;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-10px);
+                max-width: 0;
+            }
+        }
+        
+        .tab-label-enter {
+            animation: slideInRight 0.5s ease-out forwards;
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .tab-label-exit {
+            animation: slideOutLeft 0.5s ease-out forwards;
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        /* Autocomplete dropdown */
+        .autocomplete-list {
+            position: absolute;
+            background: white;
+            border: 2px solid #e10600;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            width: 100%;
+        }
+        
+        .autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .autocomplete-item:hover {
+            background: #f7f4f1;
+        }
+        
+        .autocomplete-item.selected {
+            background: #e10600;
+            color: white;
+        }
+        
+        /* Versenyző színek csapatonként */
+        .driver-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 12px;
+            margin: 2px;
+        }
+        
+        /* Csapat színek - F1.com alapján */
+        .team-redbull { background: #3671C6; color: white; }
+        .team-ferrari { background: #E8002D; color: white; }
+        .team-mercedes { background: #27F4D2; color: black; }
+        .team-mclaren { background: #FF8000; color: white; }
+        .team-astonmartin { background: #229971; color: white; }
+        .team-alpine { background: #FF87BC; color: black; }
+        .team-williams { background: #64C4FF; color: black; }
+        .team-haas { background: #B6BABD; color: black; }
+        .team-racingbulls { background: #6692FF; color: white; }
+        .team-audi { background: #C92D4B; color: white; }
+        .team-cadillac { background: #1E3A8A; color: white; }
+        
+        /* Kupák */
+        .trophy-large {
+            width: 24px;
+            height: 24px;
+            display: block;
+            flex-shrink: 0;
+        }
+        
+        .trophy-small {
+            width: 24px;
+            height: 24px;
+            display: block;
+            flex-shrink: 0;
+        }
+        
+        /* Eltelt verseny stílus */
+        .race-past {
+            background: #6b7280 !important;
+        }
+        
+        /* Login modal */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        /* Sync indicator */
+        .sync-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-size: 14px;
+            z-index: 100;
+        }
+        
+        .sync-indicator.syncing {
+            background: #fef3c7;
+        }
+        
+        .sync-indicator.synced {
+            background: #d1fae5;
+        }
+        
+        .sync-indicator.error {
+            background: #fee2e2;
+        }
+        
+        /* Mobil optimalizálás */
+        @media (max-width: 768px) {
+            input, button, select {
+                font-size: 16px !important;
+            }
+            
+            table {
+                font-size: 0.7rem;
+            }
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="loginModal" class="login-modal">
+        <div class="bg-white p-8 rounded-lg shadow-2xl max-w-md w-full mx-4">
+            <h2 class="text-2xl font-black mb-6 text-center">🏁 F1 FOGADÁS 2026</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">JELSZÓ</label>
+                <input type="password" id="passwordInput" class="w-full p-3 border-2 border-gray-300 rounded focus:border-red-600 outline-none" placeholder="Írd be a jelszót">
+            </div>
+            <button onclick="login()" class="w-full bg-red-600 text-white p-3 rounded font-bold hover:bg-red-700 f1-button">
+                BELÉPÉS
+            </button>
+            <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
+        </div>
+    </div>
+
+    <!-- F1 Header -->
+<header class="bg-black text-white sticky top-0 z-50 shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
+    <img src="f1_logo.png" alt="F1" class="w-18 h-9 sm:w-18 sm:h-9 flex-shrink-0">
+    <h1 class="text-xl sm:text-2xl font-black tracking-wider" style="letter-spacing: 0.05em">F1 FOGADÁS 2026</h1>
+  </div>
+</header>
+
+    <div id="app"></div>
+    
+    <!-- Sync Indicator -->
+    <div id="syncIndicator" class="sync-indicator synced hidden">
+        <span id="syncText">✓ Szinkronizálva</span>
+    </div>
+
+    <!-- Activity Log Modal -->
+    <div id="activityLogModal" class="login-modal hidden">
+        <div class="bg-white p-6 rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-black">📋 ESEMÉNYNAPLÓ</h2>
+                <button onclick="closeActivityLog()" class="text-3xl font-bold hover:text-red-600">×</button>
+            </div>
+            <div id="activityLogContent" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===== FIREBASE KONFIGURÁCIÓ =====
+        // FONTOS: Cseréld le a saját Firebase projekted adataival!
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJRxmtnYpP39_njELeHWGDx3qudsIPuV8",
+            authDomain: "f1-betting-2026.firebaseapp.com",
+            databaseURL: "https://f1-betting-2026-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "f1-betting-2026",
+            storageBucket: "f1-betting-2026.firebasestorage.app",
+            messagingSenderId: "126483797604",
+            appId: "1:126483797604:web:045a4f510828baa5457171"
+        };
+
+        // Jelszó
+        const APP_PASSWORD = "odanedugdbe-deGcD1YvMQArsx3";
+        
+        let firebaseApp;
+        let database;
+        let isAuthenticated = false;
+        let currentUser = null;
+
+        // SVG kupák Base64 kódolva
+        const TROPHIES = {
+            gold: '<img src="trophy_gold.png" alt="Arany trófea" class="trophy-large">',
+            silver: '<img src="trophy_silver.png" alt="Ezüst trófea" class="trophy-large">', 
+            bronze: '<img src="trophy_bronze.png" alt="Bronz trófea" class="trophy-large">'
+        };
+
+        // Versenyzők adatai
+        const DRIVERS = {
+            'ALB': { name: 'Alexander Albon', team: 'Williams', teamClass: 'team-williams' },
+            'ALO': { name: 'Fernando Alonso', team: 'Aston Martin', teamClass: 'team-astonmartin' },
+            'ANT': { name: 'Kimi Antonelli', team: 'Mercedes', teamClass: 'team-mercedes' },
+            'BEA': { name: 'Oliver Bearman', team: 'Haas', teamClass: 'team-haas' },
+            'BOR': { name: 'Gabriel Bortoleto', team: 'Audi', teamClass: 'team-audi' },
+            'BOT': { name: 'Valtteri Bottas', team: 'Cadillac', teamClass: 'team-cadillac' },
+            'COL': { name: 'Franco Colapinto', team: 'Alpine', teamClass: 'team-alpine' },
+            'GAS': { name: 'Pierre Gasly', team: 'Alpine', teamClass: 'team-alpine' },
+            'HAD': { name: 'Isack Hadjar', team: 'Red Bull', teamClass: 'team-redbull' },
+            'HAM': { name: 'Lewis Hamilton', team: 'Ferrari', teamClass: 'team-ferrari' },
+            'HUL': { name: 'Nico Hülkenberg', team: 'Audi', teamClass: 'team-audi' },
+            'LAW': { name: 'Liam Lawson', team: 'Racing Bulls', teamClass: 'team-racingbulls' },
+            'LEC': { name: 'Charles Leclerc', team: 'Ferrari', teamClass: 'team-ferrari' },
+            'LIN': { name: 'Arvid Lindblad', team: 'Racing Bulls', teamClass: 'team-racingbulls' },
+            'NOR': { name: 'Lando Norris', team: 'McLaren', teamClass: 'team-mclaren' },
+            'OCO': { name: 'Esteban Ocon', team: 'Haas', teamClass: 'team-haas' },
+            'PER': { name: 'Sergio Pérez', team: 'Cadillac', teamClass: 'team-cadillac' },
+            'PIA': { name: 'Oscar Piastri', team: 'McLaren', teamClass: 'team-mclaren' },
+            'RUS': { name: 'George Russell', team: 'Mercedes', teamClass: 'team-mercedes' },
+            'SAI': { name: 'Carlos Sainz', team: 'Williams', teamClass: 'team-williams' },
+            'STR': { name: 'Lance Stroll', team: 'Aston Martin', teamClass: 'team-astonmartin' },
+            'VER': { name: 'Max Verstappen', team: 'Red Bull', teamClass: 'team-redbull' }
+        };
+
+        // Konfiguráció
+        const INITIAL_PARTICIPANTS = [];
+        
+        const INITIAL_RACES = [
+            { id: 1, name: 'Ausztrál Nagydíj', date: '06-08 MAR', hasSprint: false },
+            { id: 2, name: 'Kínai Nagydíj', date: '13-15 MAR', hasSprint: true },
+            { id: 3, name: 'Japán Nagydíj', date: '27-29 MAR', hasSprint: false },
+            { id: 4, name: 'Bahreini Nagydíj', date: '10-12 APR', hasSprint: false },
+            { id: 5, name: 'Szaúd-arábiai Nagydíj', date: '17-19 APR', hasSprint: false },
+            { id: 6, name: 'Miami Nagydíj', date: '01-03 MAY', hasSprint: true },
+            { id: 7, name: 'Kanadai Nagydíj', date: '22-24 MAY', hasSprint: true },
+            { id: 8, name: 'Monacói Nagydíj', date: '05-07 JUN', hasSprint: false },
+            { id: 9, name: 'Barcelona-Catalunya Nagydíj', date: '12-14 JUN', hasSprint: false },
+            { id: 10, name: 'Osztrák Nagydíj', date: '26-28 JUN', hasSprint: false },
+            { id: 11, name: 'Brit Nagydíj', date: '03-05 JUL', hasSprint: true },
+            { id: 12, name: 'Belga Nagydíj', date: '17-19 JUL', hasSprint: false },
+            { id: 13, name: 'Magyar Nagydíj', date: '24-26 JUL', hasSprint: false },
+            { id: 14, name: 'Holland Nagydíj', date: '21-23 AUG', hasSprint: true },
+            { id: 15, name: 'Olasz Nagydíj', date: '04-06 SEP', hasSprint: false },
+            { id: 16, name: 'Spanyol Nagydíj', date: '11-13 SEP', hasSprint: false },
+            { id: 17, name: 'Azeri Nagydíj', date: '24-26 SEP', hasSprint: false },
+            { id: 18, name: 'Szingapúri Nagydíj', date: '09-11 OCT', hasSprint: true },
+            { id: 19, name: 'Amerikai Nagydíj', date: '23-25 OCT', hasSprint: false },
+            { id: 20, name: 'Mexikói Nagydíj', date: '30 OCT - 01 NOV', hasSprint: false },
+            { id: 21, name: 'Brazil Nagydíj', date: '06-08 NOV', hasSprint: false },
+            { id: 22, name: 'Las Vegas-i Nagydíj', date: '19-21 NOV', hasSprint: false },
+            { id: 23, name: 'Katari Nagydíj', date: '27-29 NOV', hasSprint: false },
+            { id: 24, name: 'Abu Dhabi Nagydíj', date: '04-06 DEC', hasSprint: false }
+        ];
+
+        // App state
+        let participants = [];
+        let races = [];
+        let deletedParticipantsData = {}; // Törölt résztvevők adatainak tárolása
+        let activeTab = 'standings';
+        let expandedRaces = {};
+        let expandedStandings = {}; // Expanded standings for detailed view
+        let expandedBets = {}; // Expanded bets for mobile view
+        let editingBet = null;
+        let editingResults = null;
+        let autocompleteState = {};
+
+        const STORAGE_KEYS = {
+            PARTICIPANTS: 'f1_participants',
+            RACES: 'f1_races',
+            DELETED_DATA: 'f1_deleted_participants'
+        };
+
+        // ===== AUTHENTICATION =====
+        function login() {
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (password === APP_PASSWORD) {
+                isAuthenticated = true;
+                
+                // Generate or retrieve device ID
+                let deviceId = localStorage.getItem('f1_device_id');
+                if (!deviceId) {
+                    deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('f1_device_id', deviceId);
+                }
+                currentUser = deviceId;
+                
+                // Save password in localStorage for auto-login
+                localStorage.setItem('f1_saved_password', password);
+                
+                document.getElementById('loginModal').classList.add('hidden');
+                logActivity('BELÉPÉS', `Eszköz belépett`);
+                init();
+            } else {
+                errorDiv.textContent = 'Helytelen jelszó!';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            if (confirm('Biztosan ki szeretnél lépni?')) {
+                logActivity('KILÉPÉS', `Eszköz kilépett`);
+                
+                // Remove saved password
+                localStorage.removeItem('f1_saved_password');
+                
+                isAuthenticated = false;
+                currentUser = null;
+                document.getElementById('loginModal').classList.remove('hidden');
+                document.getElementById('app').innerHTML = '';
+            }
+        }
+        
+        function checkAutoLogin() {
+            const savedPassword = localStorage.getItem('f1_saved_password');
+            if (savedPassword === APP_PASSWORD) {
+                document.getElementById('passwordInput').value = savedPassword;
+                login();
+            }
+        }
+
+        // ===== FIREBASE FUNCTIONS =====
+        function initFirebase() {
+            try {
+                firebaseApp = firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                console.log('Firebase inicializálva');
+                
+                // Valós idejű szinkronizáció
+                setupRealtimeSync();
+            } catch (error) {
+                console.error('Firebase inicializálási hiba:', error);
+                showSyncStatus('error', 'Firebase hiba - localStorage mód');
+                // Continue without Firebase
+                database = null;
+            }
+        }
+
+        function setupRealtimeSync() {
+            if (!database) return;
+            
+            // Participants sync
+            database.ref('participants').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && JSON.stringify(data) !== JSON.stringify(participants)) {
+                    participants = data;
+                    render();
+                } else if (!data && participants.length > 0) {
+                    // If Firebase is empty but we have local data, upload it
+                    database.ref('participants').set(participants);
+                }
+            });
+
+            // Races sync
+            database.ref('races').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && JSON.stringify(data) !== JSON.stringify(races)) {
+                    races = data;
+                    render();
+                } else if (!data && races.length > 0) {
+                    // If Firebase is empty but we have local data, upload it
+                    database.ref('races').set(races);
+                }
+            });
+
+            // Deleted data sync
+            database.ref('deletedData').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    deletedParticipantsData = data;
+                }
+            });
+        }
+
+        async function saveToFirebase() {
+            if (!database) return;
+            
+            showSyncStatus('syncing', 'Szinkronizálás...');
+            
+            try {
+                await database.ref('participants').set(participants);
+                await database.ref('races').set(races);
+                await database.ref('deletedData').set(deletedParticipantsData);
+                
+                showSyncStatus('synced', '✓ Szinkronizálva');
+            } catch (error) {
+                console.error('Firebase mentési hiba:', error);
+                showSyncStatus('error', '✗ Mentési hiba');
+            }
+        }
+
+        function showSyncStatus(status, text) {
+            const indicator = document.getElementById('syncIndicator');
+            const textElement = document.getElementById('syncText');
+            
+            indicator.className = `sync-indicator ${status}`;
+            indicator.classList.remove('hidden');
+            textElement.textContent = text;
+            
+            if (status === 'synced') {
+                setTimeout(() => {
+                    indicator.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        // ===== ACTIVITY LOG =====
+        async function logActivity(action, details) {
+            const timestamp = new Date().toISOString();
+            
+            // Try to find participant name for this device
+            let userName = currentUser;
+            if (database) {
+                try {
+                    const mappingSnapshot = await database.ref('deviceMapping/' + currentUser).once('value');
+                    const mappedName = mappingSnapshot.val();
+                    if (mappedName) {
+                        userName = mappedName;
+                    }
+                } catch (error) {
+                    // Ignore errors
+                }
+            }
+            
+            const entry = {
+                timestamp,
+                user: userName,
+                deviceId: currentUser,
+                action,
+                details
+            };
+            
+            if (database) {
+                try {
+                    await database.ref('activityLog').push(entry);
+                } catch (error) {
+                    console.error('Naplózási hiba:', error);
+                }
+            }
+        }
+        
+        async function updateDeviceMapping(participantName) {
+            // Map device ID to participant name
+            if (database && currentUser) {
+                try {
+                    await database.ref('deviceMapping/' + currentUser).set(participantName);
+                } catch (error) {
+                    console.error('Eszköz társítás hiba:', error);
+                }
+            }
+        }
+
+        async function showActivityLog() {
+            const modal = document.getElementById('activityLogModal');
+            const content = document.getElementById('activityLogContent');
+            
+            modal.classList.remove('hidden');
+            
+            if (database) {
+                try {
+                    const snapshot = await database.ref('activityLog').orderByChild('timestamp').limitToLast(100).once('value');
+                    const logs = [];
+                    
+                    snapshot.forEach((child) => {
+                        logs.push(child.val());
+                    });
+                    
+                    logs.reverse();
+                    
+                    content.innerHTML = logs.map(log => {
+                        const date = new Date(log.timestamp);
+                        const userDisplay = log.user === log.deviceId ? 
+                            `<span class="text-gray-500 text-xs">${log.deviceId}</span>` : 
+                            `<span class="font-semibold">${log.user}</span> <span class="text-gray-500 text-xs">(${log.deviceId})</span>`;
+                        
+                        return `
+                            <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-500">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span class="font-bold text-blue-600">${log.action}</span>
+                                        <span class="text-gray-600"> - ${userDisplay}</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">${date.toLocaleString('hu-HU')}</span>
+                                </div>
+                                <div class="text-sm text-gray-700 mt-1">${log.details}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } catch (error) {
+                    content.innerHTML = '<p class="text-red-600">Hiba a napló betöltése során.</p>';
+                }
+            }
+        }
+
+        function closeActivityLog() {
+            document.getElementById('activityLogModal').classList.add('hidden');
+        }
+
+        function init() {
+            if (!isAuthenticated) return;
+            
+            // ELŐSZÖR betöltjük a localStorage-t
+            loadData();
+            
+            // UTÁNA inicializáljuk a Firebase-t
+            initFirebase();
+            
+            // Majd rendereljük
+            render();
+        }
+
+        function loadDataFromLocal() {
+            const savedParticipants = localStorage.getItem(STORAGE_KEYS.PARTICIPANTS);
+            const savedRaces = localStorage.getItem(STORAGE_KEYS.RACES);
+            const savedDeleted = localStorage.getItem(STORAGE_KEYS.DELETED_DATA);
+
+            participants = savedParticipants ? JSON.parse(savedParticipants) : [...INITIAL_PARTICIPANTS];
+            races = savedRaces ? JSON.parse(savedRaces) : initializeRaces();
+            deletedParticipantsData = savedDeleted ? JSON.parse(savedDeleted) : {};
+        }
+
+        function saveDataToLocal() {
+            localStorage.setItem(STORAGE_KEYS.PARTICIPANTS, JSON.stringify(participants));
+            localStorage.setItem(STORAGE_KEYS.RACES, JSON.stringify(races));
+            localStorage.setItem(STORAGE_KEYS.DELETED_DATA, JSON.stringify(deletedParticipantsData));
+        }
+
+        function loadData() {
+            // MINDIG betöltjük a localStorage-t először
+            loadDataFromLocal();
+            // Firebase szinkronizáció a setupRealtimeSync()-ben történik
+        }
+
+        function saveData() {
+            saveToFirebase();
+            saveDataToLocal();
+        }
+
+        function initializeRaces() {
+            return INITIAL_RACES.map(race => ({
+                ...race,
+                bets: {},
+                results: {
+                    sprintQualifying: race.hasSprint ? ['', '', ''] : null,
+                    qualifying: ['', '', ''],
+                    sprint: race.hasSprint ? ['', '', ''] : null,
+                    race: ['', '', '']
+                }
+            }));
+        }
+
+        function calculatePointsQualifying(bet, result) {
+            if (!bet || !result) return 0;
+            let points = 0;
+            
+            for (let i = 0; i < 3; i++) {
+                if (bet[i] && bet[i] === result[i]) {
+                    points += 1;
+                }
+            }
+            
+            return points;
+        }
+        
+        function isPerfectPrediction(bet, result) {
+            if (!bet || !result) return false;
+            return bet[0] === result[0] && bet[1] === result[1] && bet[2] === result[2] && 
+                   bet[0] && bet[1] && bet[2]; // All three must be filled
+        }
+        
+        function areAllBetsRecorded(bet) {
+            // Check if all 3 positions are filled (not empty) and valid
+            if (!bet || !Array.isArray(bet)) return false;
+            return bet[0] && bet[0].trim() !== '' && 
+                   bet[1] && bet[1].trim() !== '' && 
+                   bet[2] && bet[2].trim() !== '';
+        }
+        
+        function getRecordedIcons(race, participant) {
+            const bet = race.bets[participant];
+            if (!bet) return '';
+            
+            let icons = '';
+            
+            // Sprint Qualifying
+            if (race.hasSprint && areAllBetsRecorded(bet.sprintQualifying)) {
+                icons += '<img src="recorded_sign_SI.png" alt="Sprint időmérő rögzítve" class="w-4 h-4" title="Sprint időmérő rögzítve">';
+            }
+            
+            // Sprint Race
+            if (race.hasSprint && areAllBetsRecorded(bet.sprint)) {
+                icons += '<img src="recorded_sign_SV.png" alt="Sprint verseny rögzítve" class="w-4 h-4" title="Sprint verseny rögzítve">';
+            }
+            
+            // Qualifying
+            if (areAllBetsRecorded(bet.qualifying)) {
+                icons += '<img src="recorded_sign_I.png" alt="Időmérő rögzítve" class="w-4 h-4" title="Időmérő rögzítve">';
+            }
+            
+            // Main Race
+            if (areAllBetsRecorded(bet.race)) {
+                icons += '<img src="recorded_sign_V.png" alt="Verseny rögzítve" class="w-4 h-4" title="Verseny rögzítve">';
+            }
+            
+            return icons;
+        }
+        
+        function getPerfectPredictions(participant) {
+            const perfects = {
+                gold: 0,    // Only main race
+                silver: 0   // Qualifying + sprint qualifying + sprint race
+            };
+            
+            races.forEach(race => {
+                const bet = race.bets[participant];
+                if (!bet) return;
+                
+                // Silver stars: qualifying and sprint events
+                if (race.hasSprint && isPerfectPrediction(bet.sprintQualifying, race.results.sprintQualifying)) {
+                    perfects.silver++;
+                }
+                if (isPerfectPrediction(bet.qualifying, race.results.qualifying)) {
+                    perfects.silver++;
+                }
+                if (race.hasSprint && isPerfectPrediction(bet.sprint, race.results.sprint)) {
+                    perfects.silver++;
+                }
+                
+                // Gold star: only main race
+                if (isPerfectPrediction(bet.race, race.results.race)) {
+                    perfects.gold++;
+                }
+            });
+            
+            return perfects;
+        }
+
+        function calculatePointsRace(bet, result) {
+            if (!bet || !result) return 0;
+            let points = 0;
+            
+            for (let i = 0; i < 3; i++) {
+                if (!bet[i]) continue;
+                
+                if (bet[i] === result[i]) {
+                    points += 5;
+                } else if (result.includes(bet[i])) {
+                    const resultIndex = result.indexOf(bet[i]);
+                    const difference = Math.abs(resultIndex - i);
+                    
+                    if (difference === 1) {
+                        points += 2;
+                    } else if (difference === 2) {
+                        points += 1;
+                    }
+                }
+            }
+            
+            return points;
+        }
+        
+        function calculatePointsSprint(bet, result) {
+            // Sprint race uses same scoring as qualifying (max 3 points)
+            if (!bet || !result) return 0;
+            let points = 0;
+            
+            for (let i = 0; i < 3; i++) {
+                if (bet[i] && bet[i] === result[i]) {
+                    points += 1;
+                }
+            }
+            
+            return points;
+        }
+
+        function calculateTotalPoints(participant) {
+            let total = 0;
+            races.forEach(race => {
+                const bet = race.bets[participant];
+                if (bet) {
+                    if (race.hasSprint && bet.sprintQualifying && race.results.sprintQualifying) {
+                        total += calculatePointsQualifying(bet.sprintQualifying, race.results.sprintQualifying);
+                    }
+                    total += calculatePointsQualifying(bet.qualifying, race.results.qualifying);
+                    if (race.hasSprint && bet.sprint && race.results.sprint) {
+                        total += calculatePointsSprint(bet.sprint, race.results.sprint);
+                    }
+                    total += calculatePointsRace(bet.race, race.results.race);
+                }
+            });
+            return total;
+        }
+
+        function getStandings() {
+            return participants
+                .map(p => ({ name: p, points: calculateTotalPoints(p) }))
+                .sort((a, b) => b.points - a.points);
+        }
+
+        function isRacePast(race) {
+            // Ha van eredménye a versenyének, akkor eltelt
+            return race.results.race && race.results.race.filter(r => r).length === 3;
+        }
+
+        function getTrophyIcon(size = 'small') {
+            const sizeClass = size === 'large' ? 'trophy-large' : 'trophy-small';
+            return {
+                gold: `<span class="${sizeClass}" style="display: inline-block;">${TROPHIES.gold}</span>`,
+                silver: `<span class="${sizeClass}" style="display: inline-block;">${TROPHIES.silver}</span>`,
+                bronze: `<span class="${sizeClass}" style="display: inline-block;">${TROPHIES.bronze}</span>`
+            };
+        }
+
+        function formatDriverBadge(code) {
+            if (!code || !DRIVERS[code]) return code;
+            const driver = DRIVERS[code];
+            return `<span class="driver-badge ${driver.teamClass}">${code}</span>`;
+        }
+
+        function render() {
+            if (!isAuthenticated) return;
+            
+            const app = document.getElementById('app');
+            const isMobile = window.innerWidth < 768;
+            
+            app.innerHTML = `
+                <div class="max-w-7xl mx-auto p-2 sm:p-4 pb-8">
+                    <div class="bg-white rounded-lg shadow-xl p-3 sm:p-6 mb-4 sm:mb-6 mt-4">
+                        <div class="flex gap-1 sm:gap-2 mb-4 sm:mb-6 border-b-2 border-gray-200 overflow-x-auto">
+                            ${renderTabs()}
+                        </div>
+
+                        ${renderTabContent()}
+                    </div>
+
+                    <div class="text-center text-xs sm:text-sm text-gray-600 mt-4 px-2">
+                        <p><strong>Pontozás:</strong> Időmérők (sprint is): pontos tipp = 1 pont | Sprint verseny: pontos tipp = 1 pont | Fő verseny: pontos tipp = 5 pont, 1 hely eltérés = 2 pont, 2 hely eltérés = 1 pont</p>
+                    </div>
+                </div>
+            `;
+            attachEventListeners();
+        }
+
+        function renderTabs() {
+            const tabs = [
+                { id: 'standings', label: 'Állás', icon: '🏆' },
+                { id: 'races', label: 'Versenyek', icon: '🏁' },
+                { id: 'participants', label: 'Résztvevők', icon: '👥' }
+            ];
+
+            return tabs.map(tab => {
+                const isActive = activeTab === tab.id;
+                return `
+                    <button 
+                        onclick="switchTab('${tab.id}')"
+                        class="px-3 sm:px-6 py-3 font-bold text-sm sm:text-base whitespace-nowrap uppercase tracking-wide transition-all ${
+                            isActive 
+                                ? 'border-b-4 border-red-600 text-red-600' 
+                                : 'text-gray-600 hover:text-red-600'
+                        }"
+                    >
+                        <span class="inline sm:hidden">${tab.icon}</span>
+                        <span class="${isActive ? 'inline tab-label-enter' : 'hidden'} sm:hidden ml-1">${tab.label}</span>
+                        <span class="hidden sm:inline">${tab.icon} ${tab.label}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderTabContent() {
+            switch(activeTab) {
+                case 'standings':
+                    return renderStandings();
+                case 'races':
+                    return renderRaces();
+                case 'participants':
+                    return renderParticipants();
+                default:
+                    return '';
+            }
+        }
+
+        function renderStandings() {
+            const standings = getStandings();
+            const trophies = getTrophyIcon('large');
+            
+            return `
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6 uppercase tracking-wide">Összesített Állás</h2>
+                    <div class="space-y-3">
+                        ${standings.map((standing, index) => {
+                            const bgClass = index === 0 ? 'bg-gradient-to-r from-yellow-100 to-yellow-50' :
+                                          index === 1 ? 'bg-gradient-to-r from-gray-100 to-gray-50' :
+                                          index === 2 ? 'bg-gradient-to-r from-orange-100 to-orange-50' :
+                                          'bg-gray-50';
+                            
+                            // Trophy (only show if points > 0)
+                            let trophy = '';
+                            if (standing.points > 0) {
+                                if (index === 0) trophy = trophies.gold;
+                                else if (index === 1) trophy = trophies.silver;
+                                else if (index === 2) trophy = trophies.bronze;
+                            }
+                            
+                            // Stars for perfect predictions
+                            const perfects = getPerfectPredictions(standing.name);
+                            let stars = '';
+                            if (perfects.gold > 0) {
+                                stars += `<img src="star_gold.svg" alt="Arany csillag" class="trophy-small" title="${perfects.gold} tökéletes fő verseny tipp">`.repeat(perfects.gold);
+                            }
+                            if (perfects.silver > 0) {
+                                stars += `<img src="star_silver.svg" alt="Ezüst csillag" class="trophy-small" title="${perfects.silver} tökéletes időmérő/sprint tipp">`.repeat(perfects.silver);
+                            }
+                            
+                            const isExpanded = expandedStandings[standing.name];
+                            
+                            return `
+                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
+                                    <div class="${bgClass} cursor-pointer" onclick="toggleStanding('${standing.name}')">
+                                        <div class="flex items-center justify-between p-4 sm:p-6">
+                                            <div class="flex items-center gap-2 sm:gap-4">
+                                                <span class="text-2xl sm:text-3xl font-black text-gray-700 w-8 sm:w-10 flex-shrink-0">${index + 1}.</span>
+                                                <span class="text-lg sm:text-2xl font-bold">${standing.name}</span>
+                                                ${trophy ? `<span class="flex items-center flex-shrink-0 ml-2">${trophy}</span>` : ''}
+                                                ${stars ? `<span class="flex items-center gap-1 flex-shrink-0">${stars}</span>` : ''}
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-2xl sm:text-3xl font-black text-red-600 flex-shrink-0">${standing.points}</span>
+                                                <svg class="arrow-down ${isExpanded ? 'rotated' : ''}" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M7 10l5 5 5-5z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${isExpanded ? renderStandingDetails(standing.name) : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function toggleStanding(name) {
+            expandedStandings[name] = !expandedStandings[name];
+            render();
+        }
+        
+        function renderStandingDetails(participantName) {
+            // Only show races that have at least one result
+            const racesWithResults = races.filter(race => {
+                return (race.results.sprintQualifying && race.results.sprintQualifying.some(r => r)) ||
+                       (race.results.qualifying && race.results.qualifying.some(r => r)) ||
+                       (race.results.sprint && race.results.sprint.some(r => r)) ||
+                       (race.results.race && race.results.race.some(r => r));
+            });
+            
+            if (racesWithResults.length === 0) {
+                return `<div class="p-4 bg-white text-center text-gray-500">Még nincsenek rögzített eredmények</div>`;
+            }
+            
+            return `
+                <div class="p-4 bg-white slide-down overflow-x-auto">
+                    <table class="w-full border-collapse table-fixed">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border-2 border-gray-300 p-1 sm:p-2 text-left font-black uppercase text-[0.65rem] sm:text-sm w-[20%]">Verseny</th>
+                                <th class="border-2 border-gray-300 p-1 sm:p-2 font-black uppercase text-[0.65rem] sm:text-sm w-[20%]">Sprint Időmérő</th>
+                                <th class="border-2 border-gray-300 p-1 sm:p-2 font-black uppercase text-[0.65rem] sm:text-sm w-[20%]">Sprint</th>
+                                <th class="border-2 border-gray-300 p-1 sm:p-2 font-black uppercase text-[0.65rem] sm:text-sm w-[20%]">Időmérő</th>
+                                <th class="border-2 border-gray-300 p-1 sm:p-2 font-black uppercase text-[0.65rem] sm:text-sm w-[20%]">Verseny</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${racesWithResults.map(race => {
+                                const bet = race.bets[participantName];
+                                
+                                // Calculate points for each event
+                                let sprintQualPoints = '';
+                                let sprintPoints = '';
+                                let qualPoints = '';
+                                let racePoints = '';
+                                
+                                if (race.hasSprint) {
+                                    if (bet && bet.sprintQualifying) {
+                                        sprintQualPoints = calculatePointsQualifying(bet.sprintQualifying, race.results.sprintQualifying);
+                                    }
+                                    if (bet && bet.sprint) {
+                                        sprintPoints = calculatePointsSprint(bet.sprint, race.results.sprint);
+                                    }
+                                }
+                                
+                                if (bet && bet.qualifying) {
+                                    qualPoints = calculatePointsQualifying(bet.qualifying, race.results.qualifying);
+                                }
+                                if (bet && bet.race) {
+                                    racePoints = calculatePointsRace(bet.race, race.results.race);
+                                }
+                                
+                                // Determine cell styling
+                                const getPointClass = (points) => {
+                                    if (points === '') return 'text-gray-400';
+                                    return points > 0 ? 'font-bold text-green-600' : 'text-gray-600';
+                                };
+                                
+                                const greyOutClass = race.hasSprint ? '' : 'bg-gray-200';
+                                
+                                return `
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="border-2 border-gray-300 p-2 font-bold text-xs sm:text-sm">${race.name.replace(' Nagydíj', '')}</td>
+                                        <td class="border-2 border-gray-300 p-2 text-center ${greyOutClass} ${getPointClass(sprintQualPoints)}">
+                                            ${race.hasSprint ? (sprintQualPoints !== '' ? sprintQualPoints : (bet ? '0' : '')) : ''}
+                                        </td>
+                                        <td class="border-2 border-gray-300 p-2 text-center ${greyOutClass} ${getPointClass(sprintPoints)}">
+                                            ${race.hasSprint ? (sprintPoints !== '' ? sprintPoints : (bet ? '0' : '')) : ''}
+                                        </td>
+                                        <td class="border-2 border-gray-300 p-2 text-center ${getPointClass(qualPoints)}">
+                                            ${qualPoints !== '' ? qualPoints : (bet ? '0' : '')}
+                                        </td>
+                                        <td class="border-2 border-gray-300 p-2 text-center ${getPointClass(racePoints)}">
+                                            ${racePoints !== '' ? racePoints : (bet ? '0' : '')}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderParticipants() {
+            return `
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6 uppercase tracking-wide">Résztvevők Kezelése</h2>
+                    <div class="mb-6 flex gap-2">
+                        <input 
+                            type="text" 
+                            id="newParticipant"
+                            placeholder="Új résztvevő neve"
+                            class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-base font-semibold focus:border-red-600 focus:outline-none"
+                            onkeypress="if(event.key === 'Enter') addParticipant()"
+                        />
+                        <button 
+                            onclick="addParticipant()"
+                            class="px-4 sm:px-6 py-3 text-white rounded-lg f1-button shadow-md"
+                            style="background-color: #C1C4F0; color: #1a1a1a;"
+                            onmouseover="this.style.backgroundColor='#a8acdc'"
+                            onmouseout="this.style.backgroundColor='#C1C4F0'"
+                        >
+                            ➕ <span class="hidden sm:inline">Hozzáad</span>
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        ${participants.map(p => `
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-red-600 transition-colors">
+                                <span class="font-bold text-lg">${p}</span>
+                                <button 
+                                    onclick="removeParticipant('${p}')"
+                                    class="p-2 text-red-600 hover:bg-red-100 rounded min-w-[44px] min-h-[44px] flex items-center justify-center font-bold text-xl"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="mt-6 flex gap-3 justify-center flex-wrap">
+                        <button onclick="showActivityLog()" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-black text-white flex-1 max-w-xs f1-button">
+                            ESEMÉNYNAPLÓ
+                        </button>
+                        <button onclick="logout()" class="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-black text-white flex-1 max-w-xs f1-button">
+                            KILÉPÉS
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRaces() {
+            return `
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6 uppercase tracking-wide">Versenyek 2026</h2>
+                    <div class="space-y-3">
+                        ${races.map(race => renderRaceCard(race)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRaceCard(race) {
+            const isPast = isRacePast(race);
+            const bgColor = isPast ? 'race-past' : 'bg-red-600';
+            const trophies = getTrophyIcon('small');
+            
+            let raceResult = '';
+            if (isPast && race.results.race) {
+                const [first, second, third] = race.results.race;
+                raceResult = `
+                    <div class="flex items-center gap-3 text-sm mt-2 flex-wrap">
+                        ${first ? `<span class="flex items-center gap-1">${formatDriverBadge(first)} ${trophies.gold}</span>` : ''}
+                        ${second ? `<span class="flex items-center gap-1">${formatDriverBadge(second)} ${trophies.silver}</span>` : ''}
+                        ${third ? `<span class="flex items-center gap-1">${formatDriverBadge(third)} ${trophies.bronze}</span>` : ''}
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="border-2 ${isPast ? 'border-gray-400' : 'border-red-600'} rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="${bgColor} text-white p-4 cursor-pointer active:opacity-90" onclick="toggleRace(${race.id})">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <h3 class="text-lg sm:text-xl font-black uppercase tracking-wide">${race.name}</h3>
+                                    <div class="flex gap-2 flex-wrap">
+                                        ${race.date ? `<span class="px-3 py-1 bg-white bg-opacity-20 text-xs font-bold rounded uppercase">${race.date}</span>` : ''}
+                                        ${race.hasSprint ? '<span class="px-3 py-1 bg-yellow-500 text-black text-xs font-black rounded uppercase">SPRINT</span>' : ''}
+                                    </div>
+                                </div>
+                                ${raceResult}
+                            </div>
+                            <svg class="arrow-down ${expandedRaces[race.id] ? 'rotated' : ''}" width="24" height="24" viewBox="0 0 24 24" fill="white">
+                                <path d="M7 10l5 5 5-5z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    ${expandedRaces[race.id] ? renderRaceDetails(race) : ''}
+                </div>
+            `;
+        }
+
+        function renderRaceDetails(race) {
+            const eventOrder = [];
+            
+            if (race.hasSprint) {
+                eventOrder.push({ key: 'sprintQualifying', label: 'Sprint Időmérő', isQualifying: true });
+                eventOrder.push({ key: 'sprint', label: 'Sprint Verseny', isQualifying: false });
+            }
+            eventOrder.push({ key: 'qualifying', label: 'Időmérő', isQualifying: true });
+            eventOrder.push({ key: 'race', label: 'Verseny', isQualifying: false });
+            
+            return `
+                <div class="p-4 bg-white slide-down">
+                    <div class="mb-6">
+                        <h4 class="font-black mb-4 text-xl uppercase tracking-wide border-b-2 border-red-600 pb-2">Eredmények</h4>
+                        <div class="grid gap-4">
+                            ${eventOrder.map(event => `
+                                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-red-600 transition-colors">
+                                    <div class="font-bold text-base mb-2 uppercase text-red-600">${event.label}</div>
+                                    ${renderResultsInput(race, event.key, event.isQualifying)}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <h4 class="font-black mb-4 text-xl uppercase tracking-wide border-b-2 border-red-600 pb-2">Tippek</h4>
+                    ${renderBetsTable(race, eventOrder)}
+                </div>
+            `;
+        }
+
+        function renderResultsInput(race, category, isQualifying) {
+            const isEditing = editingResults && editingResults.raceId === race.id && editingResults.category === category;
+            const results = race.results[category] || ['', '', ''];
+            
+            if (!isEditing) {
+                const displayParts = [];
+                let hasInvalidCode = false;
+                
+                for (let i = 0; i < 3; i++) {
+                    if (results[i]) {
+                        if (!isValidDriverCode(results[i])) {
+                            hasInvalidCode = true;
+                            // Show invalid code with red background
+                            displayParts.push(`<span class="px-2 py-1 bg-red-600 text-white font-bold rounded">${results[i]}</span>`);
+                        } else {
+                            displayParts.push(formatDriverBadge(results[i]));
+                        }
+                    }
+                }
+                const displayText = displayParts.length > 0 ? displayParts.join(' ') : '-';
+                
+                // Add red border if there are invalid codes
+                const containerClass = hasInvalidCode ? 'border-2 border-red-600 rounded p-2' : '';
+                
+                return `
+                    <div class="flex items-center gap-2 ${containerClass}">
+                        <div class="flex-1 break-all">${displayText}</div>
+                        <button onclick="startEditingResults(${race.id}, '${category}')" class="p-2 hover:bg-gray-100 rounded min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="flex flex-col gap-2">
+                    <div class="grid grid-cols-3 gap-2">
+                        ${[0, 1, 2].map(i => renderAutocompleteInput(
+                            `result-${category}-${i}`, 
+                            results[i] || '', 
+                            `${i + 1}.`,
+                            'result',
+                            i === 2 ? `save-result-btn-${race.id}-${category}` : null
+                        )).join('')}
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="save-result-btn-${race.id}-${category}" onclick="saveResults(${race.id}, '${category}')" class="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 f1-button font-bold">
+                            💾 MENTÉS
+                        </button>
+                        <button onclick="cancelEditingResults()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 min-w-[44px] font-bold text-xl">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAutocompleteInput(id, value, placeholder, type, saveBtnId = null) {
+            return `
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="${id}"
+                        value="${value}"
+                        placeholder="${placeholder}"
+                        class="w-full px-3 py-2 border-2 border-gray-300 rounded font-bold uppercase focus:border-red-600 focus:outline-none"
+                        oninput="handleAutocomplete(event, '${id}')"
+                        onkeydown="handleInputKeydown(event, '${id}', ${saveBtnId ? `'${saveBtnId}'` : 'null'})"
+                        onblur="handleInputBlur('${id}')"
+                        autocomplete="off"
+                    />
+                    <div id="${id}-autocomplete" class="autocomplete-list hidden"></div>
+                </div>
+            `;
+        }
+        
+        function handleInputBlur(inputId) {
+            // Small delay to allow click events on dropdown to fire first
+            setTimeout(() => {
+                const dropdown = document.getElementById(inputId + '-autocomplete');
+                if (dropdown) {
+                    dropdown.classList.add('hidden');
+                }
+                autocompleteState[inputId] = null;
+            }, 200);
+        }
+
+        function handleAutocomplete(event, inputId) {
+            const input = event.target;
+            const value = input.value.toUpperCase();
+            const dropdown = document.getElementById(inputId + '-autocomplete');
+            
+            if (value.length === 0) {
+                dropdown.classList.add('hidden');
+                autocompleteState[inputId] = null;
+                return;
+            }
+            
+            const matches = Object.keys(DRIVERS).filter(code => 
+                code.startsWith(value) || 
+                DRIVERS[code].name.toUpperCase().includes(value)
+            );
+            
+            if (matches.length === 0) {
+                dropdown.classList.add('hidden');
+                autocompleteState[inputId] = null;
+                return;
+            }
+            
+            autocompleteState[inputId] = { matches, selectedIndex: -1 };
+            
+            dropdown.innerHTML = matches.map((code, index) => {
+                const driver = DRIVERS[code];
+                return `
+                    <div class="autocomplete-item" 
+                         onclick="selectDriver('${inputId}', '${code}')"
+                         data-index="${index}">
+                        <span class="driver-badge ${driver.teamClass}">${code}</span>
+                        <span class="text-sm ml-2">${driver.name}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            dropdown.classList.remove('hidden');
+        }
+
+        function handleAutocompleteBlur(event, inputId) {
+            // Use setTimeout to allow click events on dropdown to fire first
+            setTimeout(() => {
+                const input = document.getElementById(inputId);
+                const state = autocompleteState[inputId];
+                
+                if (state && state.matches.length > 0) {
+                    // Auto-select first match if there's an exact match or only one match
+                    const inputValue = input.value.toUpperCase();
+                    const exactMatch = state.matches.find(code => code === inputValue);
+                    
+                    if (exactMatch) {
+                        // Exact match found, use it
+                        input.value = exactMatch;
+                    } else if (state.matches.length === 1) {
+                        // Only one match, auto-select it
+                        input.value = state.matches[0];
+                    } else if (inputValue.length >= 2) {
+                        // Multiple matches but user typed at least 2 chars, use first match
+                        input.value = state.matches[0];
+                    }
+                }
+                
+                // Hide dropdown
+                const dropdown = document.getElementById(inputId + '-autocomplete');
+                dropdown.classList.add('hidden');
+                autocompleteState[inputId] = null;
+            }, 150);
+        }
+
+        function handleAutocompleteKeydown(event, inputId) {
+            const state = autocompleteState[inputId];
+            
+            // If no autocomplete state but ArrowDown pressed, try to move to next field
+            if (!state || state.matches.length === 0) {
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    const input = document.getElementById(inputId);
+                    const form = input.closest('form') || input.closest('.grid');
+                    if (form) {
+                        const inputs = Array.from(form.querySelectorAll('input[type="text"]'));
+                        const currentIndex = inputs.indexOf(input);
+                        if (currentIndex >= 0 && currentIndex < inputs.length - 1) {
+                            inputs[currentIndex + 1].focus();
+                        }
+                    }
+                }
+                return;
+            }
+            
+            const dropdown = document.getElementById(inputId + '-autocomplete');
+            
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                // If already at the last item, close dropdown and move focus
+                if (state.selectedIndex === state.matches.length - 1) {
+                    dropdown.classList.add('hidden');
+                    autocompleteState[inputId] = null;
+                    // Try to focus next field
+                    const input = document.getElementById(inputId);
+                    const form = input.closest('form') || input.closest('.grid');
+                    if (form) {
+                        const inputs = Array.from(form.querySelectorAll('input[type="text"]'));
+                        const currentIndex = inputs.indexOf(input);
+                        if (currentIndex >= 0 && currentIndex < inputs.length - 1) {
+                            inputs[currentIndex + 1].focus();
+                        } else {
+                            // This is the last input field - just close dropdown and blur
+                            input.blur();
+                        }
+                    }
+                } else {
+                    state.selectedIndex = Math.min(state.selectedIndex + 1, state.matches.length - 1);
+                    updateAutocompleteSelection(dropdown, state.selectedIndex);
+                }
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
+                updateAutocompleteSelection(dropdown, state.selectedIndex);
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                if (state.selectedIndex >= 0) {
+                    selectDriver(inputId, state.matches[state.selectedIndex]);
+                    // Note: selectDriver now handles moving to next field
+                }
+            } else if (event.key === 'Escape') {
+                dropdown.classList.add('hidden');
+                autocompleteState[inputId] = null;
+            }
+        }
+
+        function handleInputKeydown(event, inputId, saveBtnId) {
+            const state = autocompleteState[inputId];
+            
+            // Handle Tab key specially
+            if (event.key === 'Tab' && !event.shiftKey) {
+                // If there's a selected item in autocomplete (highlighted with arrows), select it first
+                if (state && state.selectedIndex >= 0 && state.matches.length > 0) {
+                    event.preventDefault();
+                    selectDriver(inputId, state.matches[state.selectedIndex]);
+                    
+                    // Focus save button if this is the last input
+                    if (saveBtnId) {
+                        setTimeout(() => {
+                            const saveBtn = document.getElementById(saveBtnId);
+                            if (saveBtn) {
+                                saveBtn.focus();
+                            }
+                        }, 0);
+                    }
+                    return;
+                }
+                
+                // If no item is selected but autocomplete is open, try to auto-select
+                if (state && state.matches.length > 0) {
+                    const input = document.getElementById(inputId);
+                    const inputValue = input.value.toUpperCase();
+                    
+                    // Check for exact match
+                    const exactMatch = state.matches.find(code => code === inputValue);
+                    if (exactMatch) {
+                        event.preventDefault();
+                        selectDriver(inputId, exactMatch);
+                        
+                        // Focus save button if this is the last input
+                        if (saveBtnId) {
+                            setTimeout(() => {
+                                const saveBtn = document.getElementById(saveBtnId);
+                                if (saveBtn) {
+                                    saveBtn.focus();
+                                }
+                            }, 0);
+                        }
+                        return;
+                    }
+                    
+                    // If only one match, select it
+                    if (state.matches.length === 1) {
+                        event.preventDefault();
+                        selectDriver(inputId, state.matches[0]);
+                        
+                        // Focus save button if this is the last input
+                        if (saveBtnId) {
+                            setTimeout(() => {
+                                const saveBtn = document.getElementById(saveBtnId);
+                                if (saveBtn) {
+                                    saveBtn.focus();
+                                }
+                            }, 0);
+                        }
+                        return;
+                    }
+                    
+                    // Otherwise just close autocomplete and allow normal Tab
+                    const dropdown = document.getElementById(inputId + '-autocomplete');
+                    dropdown.classList.add('hidden');
+                    autocompleteState[inputId] = null;
+                }
+                
+                // Focus save button if this is the last input
+                if (saveBtnId) {
+                    event.preventDefault();
+                    const saveBtn = document.getElementById(saveBtnId);
+                    if (saveBtn) {
+                        saveBtn.focus();
+                    }
+                }
+                // Otherwise allow default Tab behavior
+                return;
+            }
+            
+            // Handle other keys with autocomplete
+            handleAutocompleteKeydown(event, inputId);
+        }
+
+        function updateAutocompleteSelection(dropdown, selectedIndex) {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        function selectDriver(inputId, code) {
+            const input = document.getElementById(inputId);
+            input.value = code;
+            const dropdown = document.getElementById(inputId + '-autocomplete');
+            dropdown.classList.add('hidden');
+            autocompleteState[inputId] = null;
+            
+            // Move focus to next field after selection
+            const form = input.closest('form') || input.closest('.grid');
+            if (form) {
+                const inputs = Array.from(form.querySelectorAll('input[type="text"]'));
+                const currentIndex = inputs.indexOf(input);
+                if (currentIndex >= 0 && currentIndex < inputs.length - 1) {
+                    setTimeout(() => {
+                        inputs[currentIndex + 1].focus();
+                    }, 100);
+                }
+            }
+        }
+        
+        function isValidDriverCode(code) {
+            if (!code || code.trim() === '') return true; // Empty is valid (no input yet)
+            return DRIVERS.hasOwnProperty(code.toUpperCase());
+        }
+
+        function renderBetsTable(race, eventOrder) {
+            const isMobile = window.innerWidth < 768;
+            
+            if (isMobile) {
+                return `
+                    <div class="space-y-3">
+                        ${participants.map(participant => {
+                            const bet = race.bets[participant];
+                            const points = calculateParticipantPoints(race, participant);
+                            const betKey = `${race.id}-${participant}`;
+                            const isExpanded = expandedBets[betKey];
+                            const recordedIcons = getRecordedIcons(race, participant);
+
+                            return `
+                                <div class="border-2 border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
+                                    <div class="p-3 cursor-pointer active:bg-gray-100" onclick="toggleBet('${betKey}')">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex items-center gap-2">
+                                                <h5 class="font-black text-base uppercase">${participant}</h5>
+                                                ${recordedIcons ? `<span class="flex items-center gap-1">${recordedIcons}</span>` : ''}
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-lg font-black text-red-600">${points} pont</span>
+                                                <svg class="arrow-down ${isExpanded ? 'rotated' : ''}" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M7 10l5 5 5-5z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${isExpanded ? `
+                                        <div class="px-3 pb-3 slide-down">
+                                            <div class="space-y-2 border-t-2 border-red-600 pt-3">
+                                                ${eventOrder.map(event => `
+                                                    <div class="bg-white p-2 rounded border border-gray-200">
+                                                        <div class="font-bold text-xs uppercase text-red-600 mb-1">${event.label}:</div>
+                                                        ${renderBetInput(race, participant, event.key, event.isQualifying)}
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <table class="w-full border-collapse table-fixed">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border-2 border-gray-300 p-3 text-left sticky left-0 bg-gray-100 z-10 font-black uppercase w-[15%]">Résztvevő</th>
+                                ${eventOrder.map(event => `
+                                    <th class="border-2 border-gray-300 p-3 font-black uppercase ${race.hasSprint ? 'w-[17%]' : 'w-[28%]'}">${event.label}</th>
+                                `).join('')}
+                                <th class="border-2 border-gray-300 p-3 font-black uppercase w-[15%]">Pontok</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${participants.map(participant => {
+                                const points = calculateParticipantPoints(race, participant);
+
+                                return `
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="border-2 border-gray-300 p-3 font-bold sticky left-0 bg-white">${participant}</td>
+                                        ${eventOrder.map(event => `
+                                            <td class="border-2 border-gray-300 p-3">${renderBetInput(race, participant, event.key, event.isQualifying)}</td>
+                                        `).join('')}
+                                        <td class="border-2 border-gray-300 p-3 text-center font-black text-xl text-red-600">${points}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function calculateParticipantPoints(race, participant) {
+            const bet = race.bets[participant];
+            if (!bet) return 0;
+            
+            let points = 0;
+            
+            if (race.hasSprint && bet.sprintQualifying && race.results.sprintQualifying) {
+                points += calculatePointsQualifying(bet.sprintQualifying, race.results.sprintQualifying);
+            }
+            if (bet.qualifying && race.results.qualifying) {
+                points += calculatePointsQualifying(bet.qualifying, race.results.qualifying);
+            }
+            if (race.hasSprint && bet.sprint && race.results.sprint) {
+                points += calculatePointsSprint(bet.sprint, race.results.sprint);
+            }
+            if (bet.race && race.results.race) {
+                points += calculatePointsRace(bet.race, race.results.race);
+            }
+            
+            return points;
+        }
+
+        function renderBetInput(race, participant, category, isQualifying) {
+            const isEditing = editingBet && editingBet.raceId === race.id && editingBet.participant === participant && editingBet.category === category;
+            const bet = race.bets[participant] || {};
+            const betData = bet[category] || ['', '', ''];
+
+            if (!isEditing) {
+                const displayParts = [];
+                let hasInvalidCode = false;
+                
+                for (let i = 0; i < 3; i++) {
+                    if (betData[i]) {
+                        if (!isValidDriverCode(betData[i])) {
+                            hasInvalidCode = true;
+                            // Show invalid code with red background
+                            displayParts.push(`<span class="px-2 py-1 bg-red-600 text-white font-bold rounded">${betData[i]}</span>`);
+                        } else {
+                            displayParts.push(formatDriverBadge(betData[i]));
+                        }
+                    }
+                }
+                const displayText = displayParts.length > 0 ? displayParts.join(' ') : '-';
+                
+                // Add red border if there are invalid codes
+                const containerClass = hasInvalidCode ? 'border-2 border-red-600 rounded p-2' : '';
+                
+                return `
+                    <div class="flex items-center gap-2 ${containerClass}">
+                        <div class="flex-1 text-sm break-all">${displayText}</div>
+                        <button onclick="startEditingBet(${race.id}, '${participant}', '${category}')" class="p-1 sm:p-2 hover:bg-gray-100 rounded flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="flex flex-col gap-2">
+                    <div class="grid grid-cols-3 gap-1">
+                        ${[0, 1, 2].map(i => renderAutocompleteInput(
+                            `bet-${category}-${i}`, 
+                            betData[i] || '', 
+                            `${i + 1}.`,
+                            'bet',
+                            i === 2 ? `save-btn-${race.id}-${participant}-${category}` : null
+                        )).join('')}
+                    </div>
+                    <div class="flex gap-1">
+                        <button id="save-btn-${race.id}-${participant}-${category}" onclick="saveBet(${race.id}, '${participant}', '${category}')" class="flex-1 px-2 py-2 bg-green-600 text-white rounded hover:bg-green-700 f1-button text-xs font-bold">
+                            💾 MENTÉS
+                        </button>
+                        <button onclick="cancelEditingBet()" class="px-2 py-2 bg-red-600 text-white rounded hover:bg-red-700 min-w-[44px] font-bold">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Event handlers
+        function switchTab(tabId) {
+            activeTab = tabId;
+            render();
+        }
+
+        function toggleRace(raceId) {
+            expandedRaces[raceId] = !expandedRaces[raceId];
+            render();
+        }
+        
+        function toggleBet(betKey) {
+            expandedBets[betKey] = !expandedBets[betKey];
+            render();
+        }
+
+        function addParticipant() {
+            const input = document.getElementById('newParticipant');
+            const name = input.value.trim();
+            
+            if (name && !participants.includes(name)) {
+                participants.push(name);
+                
+                // Ha volt korábban törölt adata, állítsuk vissza
+                if (deletedParticipantsData[name]) {
+                    races.forEach(race => {
+                        if (deletedParticipantsData[name][race.id]) {
+                            race.bets[name] = deletedParticipantsData[name][race.id];
+                        }
+                    });
+                }
+                
+                // Map this device to the participant name
+                updateDeviceMapping(name);
+                
+                logActivity('RÉSZTVEVŐ HOZZÁADVA', `${name} hozzáadva`);
+                saveData();
+                render();
+                input.value = '';
+            }
+        }
+
+        function removeParticipant(name) {
+            if (confirm(`Biztosan törölni szeretnéd ${name}-t? (Az adatai megmaradnak, ha később újra hozzáadod.)`)) {
+                // Mentjük az adatait mielőtt töröljük
+                deletedParticipantsData[name] = {};
+                races.forEach(race => {
+                    if (race.bets[name]) {
+                        deletedParticipantsData[name][race.id] = race.bets[name];
+                        delete race.bets[name];
+                    }
+                });
+                
+                participants = participants.filter(p => p !== name);
+                logActivity('RÉSZTVEVŐ TÖRÖLVE', `${name} törölve`);
+                saveData();
+                render();
+            }
+        }
+
+        function startEditingBet(raceId, participant, category) {
+            const race = races.find(r => r.id === raceId);
+            if (!race) return;
+            
+            // Check if results are already entered for this category
+            const results = race.results[category];
+            if (results && results.some(r => r)) {
+                alert('Késő sajnos.\nMár rögzítve van az esemény eredménye.');
+                return;
+            }
+            
+            editingBet = { raceId, participant, category };
+            render();
+            
+            // Auto-focus the first input field after render
+            setTimeout(() => {
+                const firstInput = document.getElementById(`bet-${category}-0`);
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }, 0);
+        }
+
+        function cancelEditingBet() {
+            editingBet = null;
+            render();
+        }
+
+        function saveBet(raceId, participant, category) {
+            const race = races.find(r => r.id === raceId);
+            if (!race) return;
+
+            // Ha még nincs bet objektum a résztvevőnek, hozzuk létre
+            if (!race.bets[participant]) {
+                race.bets[participant] = {};
+            }
+            
+            // Csak az adott kategória adatait gyűjtsük össze és alakítsuk nagybetűssé
+            race.bets[participant][category] = [
+                (document.getElementById(`bet-${category}-0`)?.value || '').toUpperCase(),
+                (document.getElementById(`bet-${category}-1`)?.value || '').toUpperCase(),
+                (document.getElementById(`bet-${category}-2`)?.value || '').toUpperCase()
+            ];
+
+            editingBet = null;
+            logActivity('TIPP MENTVE', `${participant} - ${race.name} - ${category}`);
+            saveData();
+            render();
+        }
+
+        function startEditingResults(raceId, category) {
+            editingResults = { raceId, category };
+            render();
+            
+            // Auto-focus the first input field after render
+            setTimeout(() => {
+                const firstInput = document.getElementById(`result-${category}-0`);
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }, 0);
+        }
+
+        function cancelEditingResults() {
+            editingResults = null;
+            render();
+        }
+
+        function saveResults(raceId, category) {
+            const race = races.find(r => r.id === raceId);
+            if (!race) return;
+
+            const results = [
+                (document.getElementById(`result-${category}-0`)?.value || '').toUpperCase(),
+                (document.getElementById(`result-${category}-1`)?.value || '').toUpperCase(),
+                (document.getElementById(`result-${category}-2`)?.value || '').toUpperCase()
+            ];
+
+            race.results[category] = results;
+            editingResults = null;
+            logActivity('EREDMÉNY RÖGZÍTVE', `${race.name} - ${category}: ${results.join(', ')}`);
+            saveData();
+            render();
+        }
+
+        function attachEventListeners() {
+            // Click outside to close autocomplete
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.relative')) {
+                    document.querySelectorAll('.autocomplete-list').forEach(list => {
+                        list.classList.add('hidden');
+                    });
+                }
+            });
+            
+            // Escape key to cancel editing
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (editingBet) {
+                        cancelEditingBet();
+                    }
+                    if (editingResults) {
+                        cancelEditingResults();
+                    }
+                }
+            });
+            
+            // Enter key on password input
+            const passwordInput = document.getElementById('passwordInput');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        login();
+                    }
+                });
+            }
+        }
+
+        // Indítás
+        window.onload = () => {
+            checkAutoLogin();
+            if (!isAuthenticated) {
+                document.getElementById('passwordInput').focus();
+            }
+        };
+    </script>
+</body>
+</html>

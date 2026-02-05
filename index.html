@@ -16,6 +16,7 @@
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
@@ -238,6 +239,10 @@
         <div class="bg-white p-8 rounded-lg shadow-2xl max-w-md w-full mx-4">
             <h2 class="text-2xl font-black mb-6 text-center">🏁 F1 FOGADÁS 2026</h2>
             <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">EMAIL</label>
+                <input type="email" id="emailInput" class="w-full p-3 border-2 border-gray-300 rounded focus:border-red-600 outline-none" placeholder="email@example.com">
+            </div>
+            <div class="mb-4">
                 <label class="block text-sm font-bold mb-2">JELSZÓ</label>
                 <input type="password" id="passwordInput" class="w-full p-3 border-2 border-gray-300 rounded focus:border-red-600 outline-none" placeholder="Írd be a jelszót">
             </div>
@@ -287,10 +292,8 @@
             appId: "1:126483797604:web:045a4f510828baa5457171"
         };
 
-        // Jelszó
-        const APP_PASSWORD = "odanedugdbe-deGcD1YvMQArsx3";
-
         let firebaseApp;
+        let auth;
         let database;
         let isAuthenticated = false;
         let currentUser = null;
@@ -377,60 +380,87 @@
         };
 
         // ===== AUTHENTICATION =====
-        function login() {
+        async function login() {
+            const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             const errorDiv = document.getElementById('loginError');
 
-            if (password === APP_PASSWORD) {
-                isAuthenticated = true;
+            if (!email || !password) {
+                errorDiv.textContent = 'Kérlek töltsd ki mindkét mezőt!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
 
-                // Generate or retrieve device ID
-                let deviceId = localStorage.getItem('f1_device_id');
-                if (!deviceId) {
-                    deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('f1_device_id', deviceId);
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                // Auth state listener will handle the rest
+            } catch (error) {
+                console.error('Login error:', error);
+                let errorMessage = 'Bejelentkezési hiba!';
+
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = 'A felhasználó nem létezik!';
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMessage = 'Helytelen jelszó!';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Érvénytelen email cím!';
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMessage = 'Túl sok sikertelen próbálkozás. Próbáld később!';
                 }
-                currentUser = deviceId;
 
-                // Save password in localStorage for auto-login
-                localStorage.setItem('f1_saved_password', password);
-
-                document.getElementById('loginModal').classList.add('hidden');
-                logActivity('BELÉPÉS', `Eszköz belépett`);
-                init();
-            } else {
-                errorDiv.textContent = 'Helytelen jelszó!';
+                errorDiv.textContent = errorMessage;
                 errorDiv.classList.remove('hidden');
             }
         }
 
-        function logout() {
+        async function logout() {
             if (confirm('Biztosan ki szeretnél lépni?')) {
-                logActivity('KILÉPÉS', `Eszköz kilépett`);
-
-                // Remove saved password
-                localStorage.removeItem('f1_saved_password');
-
-                isAuthenticated = false;
-                currentUser = null;
-                document.getElementById('loginModal').classList.remove('hidden');
-                document.getElementById('app').innerHTML = '';
+                try {
+                    await logActivity('KILÉPÉS', `${currentUser} kilépett`);
+                    await auth.signOut();
+                    // Auth state listener will handle the rest
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
             }
         }
 
-        function checkAutoLogin() {
-            const savedPassword = localStorage.getItem('f1_saved_password');
-            if (savedPassword === APP_PASSWORD) {
-                document.getElementById('passwordInput').value = savedPassword;
-                login();
-            }
+        function setupAuthStateListener() {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // User is signed in
+                    isAuthenticated = true;
+                    currentUser = user.email;
+                    document.getElementById('loginModal').classList.add('hidden');
+
+                    if (!firebaseApp._isInitialized) {
+                        // First time login, initialize everything
+                        firebaseApp._isInitialized = true;
+                        logActivity('BELÉPÉS', `${user.email} belépett`);
+                        init();
+                    }
+                } else {
+                    // User is signed out
+                    isAuthenticated = false;
+                    currentUser = null;
+                    document.getElementById('loginModal').classList.remove('hidden');
+                    document.getElementById('app').innerHTML = '';
+                }
+            });
         }
 
         // ===== FIREBASE FUNCTIONS =====
         function initFirebase() {
             try {
-                firebaseApp = firebase.initializeApp(firebaseConfig);
+                if (!firebaseApp) {
+                    firebaseApp = firebase.initializeApp(firebaseConfig);
+                    firebaseApp._isInitialized = false;
+                }
+                auth = firebase.auth();
                 database = firebase.database();
+
+                // Setup auth state listener
+                setupAuthStateListener();
 
                 // Valós idejű szinkronizáció
                 setupRealtimeSync();
@@ -530,11 +560,12 @@
         async function logActivity(action, details) {
             const timestamp = new Date().toISOString();
 
-            // Try to find participant name for this device
+            // Try to find participant name for this user
             let userName = currentUser;
-            if (database) {
+            if (database && currentUser) {
                 try {
-                    const mappingSnapshot = await database.ref('deviceMapping/' + currentUser).once('value');
+                    const sanitizedEmail = currentUser.replace(/[.#$\[\]]/g, '_');
+                    const mappingSnapshot = await database.ref('userMapping/' + sanitizedEmail).once('value');
                     const mappedName = mappingSnapshot.val();
                     if (mappedName) {
                         userName = mappedName;
@@ -547,7 +578,7 @@
             const entry = {
                 timestamp,
                 user: userName,
-                deviceId: currentUser,
+                email: currentUser,
                 action,
                 details
             };
@@ -562,12 +593,13 @@
         }
 
         async function updateDeviceMapping(participantName) {
-            // Map device ID to participant name
+            // Map user email to participant name
             if (database && currentUser) {
                 try {
-                    await database.ref('deviceMapping/' + currentUser).set(participantName);
+                    const sanitizedEmail = currentUser.replace(/[.#$\[\]]/g, '_');
+                    await database.ref('userMapping/' + sanitizedEmail).set(participantName);
                 } catch (error) {
-                    console.error('Eszköz társítás hiba:', error);
+                    console.error('Felhasználó társítás hiba:', error);
                 }
             }
         }
@@ -591,9 +623,9 @@
 
                     content.innerHTML = logs.map(log => {
                         const date = new Date(log.timestamp);
-                        const userDisplay = log.user === log.deviceId ?
-                            `<span class="text-gray-500 text-xs">${log.deviceId}</span>` :
-                            `<span class="font-semibold">${log.user}</span> <span class="text-gray-500 text-xs">(${log.deviceId})</span>`;
+                        const userDisplay = log.user === log.email || log.user === log.deviceId ?
+                            `<span class="text-gray-500 text-xs">${log.email || log.deviceId || log.user}</span>` :
+                            `<span class="font-semibold">${log.user}</span> <span class="text-gray-500 text-xs">(${log.email || log.deviceId || ''})</span>`;
 
                         return `
                             <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-500">
@@ -623,9 +655,6 @@
 
             // ELŐSZÖR betöltjük a localStorage-t
             loadData();
-
-            // UTÁNA inicializáljuk a Firebase-t
-            initFirebase();
 
             // Majd rendereljük
             render();
@@ -1859,8 +1888,18 @@
                 }
             });
 
-            // Enter key on password input
+            // Enter key on email and password inputs
+            const emailInput = document.getElementById('emailInput');
             const passwordInput = document.getElementById('passwordInput');
+
+            if (emailInput) {
+                emailInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        if (passwordInput) passwordInput.focus();
+                    }
+                });
+            }
+
             if (passwordInput) {
                 passwordInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
@@ -1872,10 +1911,16 @@
 
         // Indítás
         window.onload = () => {
-            checkAutoLogin();
-            if (!isAuthenticated) {
-                document.getElementById('passwordInput').focus();
-            }
+            // Initialize Firebase and setup auth listener
+            initFirebase();
+
+            // Focus email input if not authenticated
+            setTimeout(() => {
+                if (!isAuthenticated) {
+                    const emailInput = document.getElementById('emailInput');
+                    if (emailInput) emailInput.focus();
+                }
+            }, 100);
         };
     </script>
 </body>

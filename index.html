@@ -8,22 +8,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    
+
     <style>
         * {
             font-family: 'Titillium Web', -apple-system, BlinkMacSystemFont, sans-serif;
         }
-        
+
         body {
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background: #f7f4f1;
         }
-        
+
         /* F1 stílusú gombok */
         .f1-button {
             text-transform: uppercase;
@@ -31,20 +31,20 @@
             letter-spacing: 1px;
             transition: all 0.2s;
         }
-        
+
         .f1-button:hover {
             transform: translateY(-2px);
         }
-        
+
         /* Animált nyíl */
         .arrow-down {
             transition: transform 0.3s ease;
         }
-        
+
         .arrow-down.rotated {
             transform: rotate(180deg);
         }
-        
+
         /* Slide animáció */
         @keyframes slideDown {
             from {
@@ -56,11 +56,11 @@
                 transform: translateY(0);
             }
         }
-        
+
         .slide-down {
             animation: slideDown 0.3s ease-out;
         }
-        
+
         /* Tab label animáció mobilon */
         @keyframes slideInRight {
             from {
@@ -74,7 +74,7 @@
                 max-width: 150px;
             }
         }
-        
+
         @keyframes slideOutLeft {
             from {
                 opacity: 1;
@@ -87,21 +87,21 @@
                 max-width: 0;
             }
         }
-        
+
         .tab-label-enter {
             animation: slideInRight 0.5s ease-out forwards;
             display: inline-block;
             overflow: hidden;
             white-space: nowrap;
         }
-        
+
         .tab-label-exit {
             animation: slideOutLeft 0.5s ease-out forwards;
             display: inline-block;
             overflow: hidden;
             white-space: nowrap;
         }
-        
+
         /* Autocomplete dropdown */
         .autocomplete-list {
             position: absolute;
@@ -113,22 +113,22 @@
             z-index: 100;
             width: 100%;
         }
-        
+
         .autocomplete-item {
             padding: 8px 12px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
         }
-        
+
         .autocomplete-item:hover {
             background: #f7f4f1;
         }
-        
+
         .autocomplete-item.selected {
             background: #e10600;
             color: white;
         }
-        
+
         /* Versenyző színek csapatonként */
         .driver-badge {
             display: inline-block;
@@ -138,7 +138,7 @@
             font-size: 12px;
             margin: 2px;
         }
-        
+
         /* Csapat színek - F1.com alapján */
         .team-redbull { background: #3671C6; color: white; }
         .team-ferrari { background: #E8002D; color: white; }
@@ -151,7 +151,7 @@
         .team-racingbulls { background: #6692FF; color: white; }
         .team-audi { background: #C92D4B; color: white; }
         .team-cadillac { background: #1E3A8A; color: white; }
-        
+
         /* Kupák */
         .trophy-large {
             width: 24px;
@@ -159,19 +159,19 @@
             display: block;
             flex-shrink: 0;
         }
-        
+
         .trophy-small {
             width: 24px;
             height: 24px;
             display: block;
             flex-shrink: 0;
         }
-        
+
         /* Eltelt verseny stílus */
         .race-past {
             background: #6b7280 !important;
         }
-        
+
         /* Login modal */
         .login-modal {
             position: fixed;
@@ -185,7 +185,7 @@
             justify-content: center;
             z-index: 9999;
         }
-        
+
         /* Sync indicator */
         .sync-indicator {
             position: fixed;
@@ -198,30 +198,30 @@
             font-size: 14px;
             z-index: 100;
         }
-        
+
         .sync-indicator.syncing {
             background: #fef3c7;
         }
-        
+
         .sync-indicator.synced {
             background: #d1fae5;
         }
-        
+
         .sync-indicator.error {
             background: #fee2e2;
         }
-        
+
         /* Mobil optimalizálás */
         @media (max-width: 768px) {
             input, button, select {
                 font-size: 16px !important;
             }
-            
+
             table {
                 font-size: 0.7rem;
             }
         }
-        
+
         html {
             scroll-behavior: smooth;
         }
@@ -252,7 +252,7 @@
 </header>
 
     <div id="app"></div>
-    
+
     <!-- Sync Indicator -->
     <div id="syncIndicator" class="sync-indicator synced hidden">
         <span id="syncText">✓ Szinkronizálva</span>
@@ -284,7 +284,7 @@
 
         // Jelszó
         const APP_PASSWORD = "odanedugdbe-deGcD1YvMQArsx3";
-        
+
         let firebaseApp;
         let database;
         let isAuthenticated = false;
@@ -293,7 +293,7 @@
         // SVG kupák Base64 kódolva
         const TROPHIES = {
             gold: '<img src="trophy_gold.png" alt="Arany trófea" class="trophy-large">',
-            silver: '<img src="trophy_silver.png" alt="Ezüst trófea" class="trophy-large">', 
+            silver: '<img src="trophy_silver.png" alt="Ezüst trófea" class="trophy-large">',
             bronze: '<img src="trophy_bronze.png" alt="Bronz trófea" class="trophy-large">'
         };
 
@@ -325,7 +325,7 @@
 
         // Konfiguráció
         const INITIAL_PARTICIPANTS = [];
-        
+
         const INITIAL_RACES = [
             { id: 1, name: 'Ausztrál Nagydíj', date: '06-08 MAR', hasSprint: false },
             { id: 2, name: 'Kínai Nagydíj', date: '13-15 MAR', hasSprint: true },
@@ -375,10 +375,10 @@
         function login() {
             const password = document.getElementById('passwordInput').value;
             const errorDiv = document.getElementById('loginError');
-            
+
             if (password === APP_PASSWORD) {
                 isAuthenticated = true;
-                
+
                 // Generate or retrieve device ID
                 let deviceId = localStorage.getItem('f1_device_id');
                 if (!deviceId) {
@@ -386,10 +386,10 @@
                     localStorage.setItem('f1_device_id', deviceId);
                 }
                 currentUser = deviceId;
-                
+
                 // Save password in localStorage for auto-login
                 localStorage.setItem('f1_saved_password', password);
-                
+
                 document.getElementById('loginModal').classList.add('hidden');
                 logActivity('BELÉPÉS', `Eszköz belépett`);
                 init();
@@ -402,17 +402,17 @@
         function logout() {
             if (confirm('Biztosan ki szeretnél lépni?')) {
                 logActivity('KILÉPÉS', `Eszköz kilépett`);
-                
+
                 // Remove saved password
                 localStorage.removeItem('f1_saved_password');
-                
+
                 isAuthenticated = false;
                 currentUser = null;
                 document.getElementById('loginModal').classList.remove('hidden');
                 document.getElementById('app').innerHTML = '';
             }
         }
-        
+
         function checkAutoLogin() {
             const savedPassword = localStorage.getItem('f1_saved_password');
             if (savedPassword === APP_PASSWORD) {
@@ -427,7 +427,7 @@
                 firebaseApp = firebase.initializeApp(firebaseConfig);
                 database = firebase.database();
                 console.log('Firebase inicializálva');
-                
+
                 // Valós idejű szinkronizáció
                 setupRealtimeSync();
             } catch (error) {
@@ -440,7 +440,7 @@
 
         function setupRealtimeSync() {
             if (!database) return;
-            
+
             // Participants sync
             database.ref('participants').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -476,14 +476,14 @@
 
         async function saveToFirebase() {
             if (!database) return;
-            
+
             showSyncStatus('syncing', 'Szinkronizálás...');
-            
+
             try {
                 await database.ref('participants').set(participants);
                 await database.ref('races').set(races);
                 await database.ref('deletedData').set(deletedParticipantsData);
-                
+
                 showSyncStatus('synced', '✓ Szinkronizálva');
             } catch (error) {
                 console.error('Firebase mentési hiba:', error);
@@ -494,11 +494,11 @@
         function showSyncStatus(status, text) {
             const indicator = document.getElementById('syncIndicator');
             const textElement = document.getElementById('syncText');
-            
+
             indicator.className = `sync-indicator ${status}`;
             indicator.classList.remove('hidden');
             textElement.textContent = text;
-            
+
             if (status === 'synced') {
                 setTimeout(() => {
                     indicator.classList.add('hidden');
@@ -509,7 +509,7 @@
         // ===== ACTIVITY LOG =====
         async function logActivity(action, details) {
             const timestamp = new Date().toISOString();
-            
+
             // Try to find participant name for this device
             let userName = currentUser;
             if (database) {
@@ -523,7 +523,7 @@
                     // Ignore errors
                 }
             }
-            
+
             const entry = {
                 timestamp,
                 user: userName,
@@ -531,7 +531,7 @@
                 action,
                 details
             };
-            
+
             if (database) {
                 try {
                     await database.ref('activityLog').push(entry);
@@ -540,7 +540,7 @@
                 }
             }
         }
-        
+
         async function updateDeviceMapping(participantName) {
             // Map device ID to participant name
             if (database && currentUser) {
@@ -555,26 +555,26 @@
         async function showActivityLog() {
             const modal = document.getElementById('activityLogModal');
             const content = document.getElementById('activityLogContent');
-            
+
             modal.classList.remove('hidden');
-            
+
             if (database) {
                 try {
                     const snapshot = await database.ref('activityLog').orderByChild('timestamp').limitToLast(100).once('value');
                     const logs = [];
-                    
+
                     snapshot.forEach((child) => {
                         logs.push(child.val());
                     });
-                    
+
                     logs.reverse();
-                    
+
                     content.innerHTML = logs.map(log => {
                         const date = new Date(log.timestamp);
-                        const userDisplay = log.user === log.deviceId ? 
-                            `<span class="text-gray-500 text-xs">${log.deviceId}</span>` : 
+                        const userDisplay = log.user === log.deviceId ?
+                            `<span class="text-gray-500 text-xs">${log.deviceId}</span>` :
                             `<span class="font-semibold">${log.user}</span> <span class="text-gray-500 text-xs">(${log.deviceId})</span>`;
-                        
+
                         return `
                             <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-500">
                                 <div class="flex justify-between items-start">
@@ -600,13 +600,13 @@
 
         function init() {
             if (!isAuthenticated) return;
-            
+
             // ELŐSZÖR betöltjük a localStorage-t
             loadData();
-            
+
             // UTÁNA inicializáljuk a Firebase-t
             initFirebase();
-            
+
             // Majd rendereljük
             render();
         }
@@ -654,69 +654,69 @@
         function calculatePointsQualifying(bet, result) {
             if (!bet || !result) return 0;
             let points = 0;
-            
+
             for (let i = 0; i < 3; i++) {
                 if (bet[i] && bet[i] === result[i]) {
                     points += 1;
                 }
             }
-            
+
             return points;
         }
-        
+
         function isPerfectPrediction(bet, result) {
             if (!bet || !result) return false;
-            return bet[0] === result[0] && bet[1] === result[1] && bet[2] === result[2] && 
+            return bet[0] === result[0] && bet[1] === result[1] && bet[2] === result[2] &&
                    bet[0] && bet[1] && bet[2]; // All three must be filled
         }
-        
+
         function areAllBetsRecorded(bet) {
             // Check if all 3 positions are filled (not empty) and valid
             if (!bet || !Array.isArray(bet)) return false;
-            return bet[0] && bet[0].trim() !== '' && 
-                   bet[1] && bet[1].trim() !== '' && 
+            return bet[0] && bet[0].trim() !== '' &&
+                   bet[1] && bet[1].trim() !== '' &&
                    bet[2] && bet[2].trim() !== '';
         }
-        
+
         function getRecordedIcons(race, participant) {
             const bet = race.bets[participant];
             if (!bet) return '';
-            
+
             let icons = '';
-            
+
             // Sprint Qualifying
             if (race.hasSprint && areAllBetsRecorded(bet.sprintQualifying)) {
                 icons += '<img src="recorded_sign_SI.png" alt="Sprint időmérő rögzítve" class="w-4 h-4" title="Sprint időmérő rögzítve">';
             }
-            
+
             // Sprint Race
             if (race.hasSprint && areAllBetsRecorded(bet.sprint)) {
                 icons += '<img src="recorded_sign_SV.png" alt="Sprint verseny rögzítve" class="w-4 h-4" title="Sprint verseny rögzítve">';
             }
-            
+
             // Qualifying
             if (areAllBetsRecorded(bet.qualifying)) {
                 icons += '<img src="recorded_sign_I.png" alt="Időmérő rögzítve" class="w-4 h-4" title="Időmérő rögzítve">';
             }
-            
+
             // Main Race
             if (areAllBetsRecorded(bet.race)) {
                 icons += '<img src="recorded_sign_V.png" alt="Verseny rögzítve" class="w-4 h-4" title="Verseny rögzítve">';
             }
-            
+
             return icons;
         }
-        
+
         function getPerfectPredictions(participant) {
             const perfects = {
                 gold: 0,    // Only main race
                 silver: 0   // Qualifying + sprint qualifying + sprint race
             };
-            
+
             races.forEach(race => {
                 const bet = race.bets[participant];
                 if (!bet) return;
-                
+
                 // Silver stars: qualifying and sprint events
                 if (race.hasSprint && isPerfectPrediction(bet.sprintQualifying, race.results.sprintQualifying)) {
                     perfects.silver++;
@@ -727,29 +727,29 @@
                 if (race.hasSprint && isPerfectPrediction(bet.sprint, race.results.sprint)) {
                     perfects.silver++;
                 }
-                
+
                 // Gold star: only main race
                 if (isPerfectPrediction(bet.race, race.results.race)) {
                     perfects.gold++;
                 }
             });
-            
+
             return perfects;
         }
 
         function calculatePointsRace(bet, result) {
             if (!bet || !result) return 0;
             let points = 0;
-            
+
             for (let i = 0; i < 3; i++) {
                 if (!bet[i]) continue;
-                
+
                 if (bet[i] === result[i]) {
                     points += 5;
                 } else if (result.includes(bet[i])) {
                     const resultIndex = result.indexOf(bet[i]);
                     const difference = Math.abs(resultIndex - i);
-                    
+
                     if (difference === 1) {
                         points += 2;
                     } else if (difference === 2) {
@@ -757,21 +757,21 @@
                     }
                 }
             }
-            
+
             return points;
         }
-        
+
         function calculatePointsSprint(bet, result) {
             // Sprint race uses same scoring as qualifying (max 3 points)
             if (!bet || !result) return 0;
             let points = 0;
-            
+
             for (let i = 0; i < 3; i++) {
                 if (bet[i] && bet[i] === result[i]) {
                     points += 1;
                 }
             }
-            
+
             return points;
         }
 
@@ -821,10 +821,10 @@
 
         function render() {
             if (!isAuthenticated) return;
-            
+
             const app = document.getElementById('app');
             const isMobile = window.innerWidth < 768;
-            
+
             app.innerHTML = `
                 <div class="max-w-7xl mx-auto p-2 sm:p-4 pb-8">
                     <div class="bg-white rounded-lg shadow-xl p-3 sm:p-6 mb-4 sm:mb-6 mt-4">
@@ -853,11 +853,11 @@
             return tabs.map(tab => {
                 const isActive = activeTab === tab.id;
                 return `
-                    <button 
+                    <button
                         onclick="switchTab('${tab.id}')"
                         class="px-3 sm:px-6 py-3 font-bold text-sm sm:text-base whitespace-nowrap uppercase tracking-wide transition-all ${
-                            isActive 
-                                ? 'border-b-4 border-red-600 text-red-600' 
+                            isActive
+                                ? 'border-b-4 border-red-600 text-red-600'
                                 : 'text-gray-600 hover:text-red-600'
                         }"
                     >
@@ -885,7 +885,7 @@
         function renderStandings() {
             const standings = getStandings();
             const trophies = getTrophyIcon('large');
-            
+
             return `
                 <div>
                     <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6 uppercase tracking-wide">Összesített Állás</h2>
@@ -895,7 +895,7 @@
                                           index === 1 ? 'bg-gradient-to-r from-gray-100 to-gray-50' :
                                           index === 2 ? 'bg-gradient-to-r from-orange-100 to-orange-50' :
                                           'bg-gray-50';
-                            
+
                             // Trophy (only show if points > 0)
                             let trophy = '';
                             if (standing.points > 0) {
@@ -903,7 +903,7 @@
                                 else if (index === 1) trophy = trophies.silver;
                                 else if (index === 2) trophy = trophies.bronze;
                             }
-                            
+
                             // Stars for perfect predictions
                             const perfects = getPerfectPredictions(standing.name);
                             let stars = '';
@@ -913,9 +913,9 @@
                             if (perfects.silver > 0) {
                                 stars += `<img src="star_silver.svg" alt="Ezüst csillag" class="trophy-small" title="${perfects.silver} tökéletes időmérő/sprint tipp">`.repeat(perfects.silver);
                             }
-                            
+
                             const isExpanded = expandedStandings[standing.name];
-                            
+
                             return `
                                 <div class="rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg transition-shadow">
                                     <div class="${bgClass} cursor-pointer" onclick="toggleStanding('${standing.name}')">
@@ -942,12 +942,12 @@
                 </div>
             `;
         }
-        
+
         function toggleStanding(name) {
             expandedStandings[name] = !expandedStandings[name];
             render();
         }
-        
+
         function renderStandingDetails(participantName) {
             // Only show races that have at least one result
             const racesWithResults = races.filter(race => {
@@ -956,11 +956,11 @@
                        (race.results.sprint && race.results.sprint.some(r => r)) ||
                        (race.results.race && race.results.race.some(r => r));
             });
-            
+
             if (racesWithResults.length === 0) {
                 return `<div class="p-4 bg-white text-center text-gray-500">Még nincsenek rögzített eredmények</div>`;
             }
-            
+
             return `
                 <div class="p-4 bg-white slide-down overflow-x-auto">
                     <table class="w-full border-collapse table-fixed">
@@ -976,13 +976,13 @@
                         <tbody>
                             ${racesWithResults.map(race => {
                                 const bet = race.bets[participantName];
-                                
+
                                 // Calculate points for each event
                                 let sprintQualPoints = '';
                                 let sprintPoints = '';
                                 let qualPoints = '';
                                 let racePoints = '';
-                                
+
                                 if (race.hasSprint) {
                                     if (bet && bet.sprintQualifying) {
                                         sprintQualPoints = calculatePointsQualifying(bet.sprintQualifying, race.results.sprintQualifying);
@@ -991,22 +991,22 @@
                                         sprintPoints = calculatePointsSprint(bet.sprint, race.results.sprint);
                                     }
                                 }
-                                
+
                                 if (bet && bet.qualifying) {
                                     qualPoints = calculatePointsQualifying(bet.qualifying, race.results.qualifying);
                                 }
                                 if (bet && bet.race) {
                                     racePoints = calculatePointsRace(bet.race, race.results.race);
                                 }
-                                
+
                                 // Determine cell styling
                                 const getPointClass = (points) => {
                                     if (points === '') return 'text-gray-400';
                                     return points > 0 ? 'font-bold text-green-600' : 'text-gray-600';
                                 };
-                                
+
                                 const greyOutClass = race.hasSprint ? '' : 'bg-gray-200';
-                                
+
                                 return `
                                     <tr class="hover:bg-gray-50">
                                         <td class="border-2 border-gray-300 p-2 font-bold text-xs sm:text-sm">${race.name.replace(' Nagydíj', '')}</td>
@@ -1036,14 +1036,14 @@
                 <div>
                     <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6 uppercase tracking-wide">Résztvevők Kezelése</h2>
                     <div class="mb-6 flex gap-2">
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             id="newParticipant"
                             placeholder="Új résztvevő neve"
                             class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-base font-semibold focus:border-red-600 focus:outline-none"
                             onkeypress="if(event.key === 'Enter') addParticipant()"
                         />
-                        <button 
+                        <button
                             onclick="addParticipant()"
                             class="px-4 sm:px-6 py-3 text-white rounded-lg f1-button shadow-md"
                             style="background-color: #C1C4F0; color: #1a1a1a;"
@@ -1057,7 +1057,7 @@
                         ${participants.map(p => `
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-red-600 transition-colors">
                                 <span class="font-bold text-lg">${p}</span>
-                                <button 
+                                <button
                                     onclick="removeParticipant('${p}')"
                                     class="p-2 text-red-600 hover:bg-red-100 rounded min-w-[44px] min-h-[44px] flex items-center justify-center font-bold text-xl"
                                 >
@@ -1066,7 +1066,7 @@
                             </div>
                         `).join('')}
                     </div>
-                    
+
                     <div class="mt-6 flex gap-3 justify-center flex-wrap">
                         <button onclick="showActivityLog()" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-black text-white flex-1 max-w-xs f1-button">
                             ESEMÉNYNAPLÓ
@@ -1094,7 +1094,7 @@
             const isPast = isRacePast(race);
             const bgColor = isPast ? 'race-past' : 'bg-red-600';
             const trophies = getTrophyIcon('small');
-            
+
             let raceResult = '';
             if (isPast && race.results.race) {
                 const [first, second, third] = race.results.race;
@@ -1106,7 +1106,7 @@
                     </div>
                 `;
             }
-            
+
             return `
                 <div class="border-2 ${isPast ? 'border-gray-400' : 'border-red-600'} rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                     <div class="${bgColor} text-white p-4 cursor-pointer active:opacity-90" onclick="toggleRace(${race.id})">
@@ -1133,14 +1133,14 @@
 
         function renderRaceDetails(race) {
             const eventOrder = [];
-            
+
             if (race.hasSprint) {
                 eventOrder.push({ key: 'sprintQualifying', label: 'Sprint Időmérő', isQualifying: true });
                 eventOrder.push({ key: 'sprint', label: 'Sprint Verseny', isQualifying: false });
             }
             eventOrder.push({ key: 'qualifying', label: 'Időmérő', isQualifying: true });
             eventOrder.push({ key: 'race', label: 'Verseny', isQualifying: false });
-            
+
             return `
                 <div class="p-4 bg-white slide-down">
                     <div class="mb-6">
@@ -1154,7 +1154,7 @@
                             `).join('')}
                         </div>
                     </div>
-                    
+
                     <h4 class="font-black mb-4 text-xl uppercase tracking-wide border-b-2 border-red-600 pb-2">Tippek</h4>
                     ${renderBetsTable(race, eventOrder)}
                 </div>
@@ -1164,11 +1164,11 @@
         function renderResultsInput(race, category, isQualifying) {
             const isEditing = editingResults && editingResults.raceId === race.id && editingResults.category === category;
             const results = race.results[category] || ['', '', ''];
-            
+
             if (!isEditing) {
                 const displayParts = [];
                 let hasInvalidCode = false;
-                
+
                 for (let i = 0; i < 3; i++) {
                     if (results[i]) {
                         if (!isValidDriverCode(results[i])) {
@@ -1181,10 +1181,10 @@
                     }
                 }
                 const displayText = displayParts.length > 0 ? displayParts.join(' ') : '-';
-                
+
                 // Add red border if there are invalid codes
                 const containerClass = hasInvalidCode ? 'border-2 border-red-600 rounded p-2' : '';
-                
+
                 return `
                     <div class="flex items-center gap-2 ${containerClass}">
                         <div class="flex-1 break-all">${displayText}</div>
@@ -1197,13 +1197,13 @@
                     </div>
                 `;
             }
-            
+
             return `
                 <div class="flex flex-col gap-2">
                     <div class="grid grid-cols-3 gap-2">
                         ${[0, 1, 2].map(i => renderAutocompleteInput(
-                            `result-${category}-${i}`, 
-                            results[i] || '', 
+                            `result-${category}-${i}`,
+                            results[i] || '',
                             `${i + 1}.`,
                             'result',
                             i === 2 ? `save-result-btn-${race.id}-${category}` : null
@@ -1224,8 +1224,8 @@
         function renderAutocompleteInput(id, value, placeholder, type, saveBtnId = null) {
             return `
                 <div class="relative">
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         id="${id}"
                         value="${value}"
                         placeholder="${placeholder}"
@@ -1239,7 +1239,7 @@
                 </div>
             `;
         }
-        
+
         function handleInputBlur(inputId) {
             // Small delay to allow click events on dropdown to fire first
             setTimeout(() => {
@@ -1255,30 +1255,30 @@
             const input = event.target;
             const value = input.value.toUpperCase();
             const dropdown = document.getElementById(inputId + '-autocomplete');
-            
+
             if (value.length === 0) {
                 dropdown.classList.add('hidden');
                 autocompleteState[inputId] = null;
                 return;
             }
-            
-            const matches = Object.keys(DRIVERS).filter(code => 
-                code.startsWith(value) || 
+
+            const matches = Object.keys(DRIVERS).filter(code =>
+                code.startsWith(value) ||
                 DRIVERS[code].name.toUpperCase().includes(value)
             );
-            
+
             if (matches.length === 0) {
                 dropdown.classList.add('hidden');
                 autocompleteState[inputId] = null;
                 return;
             }
-            
+
             autocompleteState[inputId] = { matches, selectedIndex: -1 };
-            
+
             dropdown.innerHTML = matches.map((code, index) => {
                 const driver = DRIVERS[code];
                 return `
-                    <div class="autocomplete-item" 
+                    <div class="autocomplete-item"
                          onclick="selectDriver('${inputId}', '${code}')"
                          data-index="${index}">
                         <span class="driver-badge ${driver.teamClass}">${code}</span>
@@ -1286,7 +1286,7 @@
                     </div>
                 `;
             }).join('');
-            
+
             dropdown.classList.remove('hidden');
         }
 
@@ -1295,12 +1295,12 @@
             setTimeout(() => {
                 const input = document.getElementById(inputId);
                 const state = autocompleteState[inputId];
-                
+
                 if (state && state.matches.length > 0) {
                     // Auto-select first match if there's an exact match or only one match
                     const inputValue = input.value.toUpperCase();
                     const exactMatch = state.matches.find(code => code === inputValue);
-                    
+
                     if (exactMatch) {
                         // Exact match found, use it
                         input.value = exactMatch;
@@ -1312,7 +1312,7 @@
                         input.value = state.matches[0];
                     }
                 }
-                
+
                 // Hide dropdown
                 const dropdown = document.getElementById(inputId + '-autocomplete');
                 dropdown.classList.add('hidden');
@@ -1322,7 +1322,7 @@
 
         function handleAutocompleteKeydown(event, inputId) {
             const state = autocompleteState[inputId];
-            
+
             // If no autocomplete state but ArrowDown pressed, try to move to next field
             if (!state || state.matches.length === 0) {
                 if (event.key === 'ArrowDown') {
@@ -1339,9 +1339,9 @@
                 }
                 return;
             }
-            
+
             const dropdown = document.getElementById(inputId + '-autocomplete');
-            
+
             if (event.key === 'ArrowDown') {
                 event.preventDefault();
                 // If already at the last item, close dropdown and move focus
@@ -1383,14 +1383,14 @@
 
         function handleInputKeydown(event, inputId, saveBtnId) {
             const state = autocompleteState[inputId];
-            
+
             // Handle Tab key specially
             if (event.key === 'Tab' && !event.shiftKey) {
                 // If there's a selected item in autocomplete (highlighted with arrows), select it first
                 if (state && state.selectedIndex >= 0 && state.matches.length > 0) {
                     event.preventDefault();
                     selectDriver(inputId, state.matches[state.selectedIndex]);
-                    
+
                     // Focus save button if this is the last input
                     if (saveBtnId) {
                         setTimeout(() => {
@@ -1402,18 +1402,18 @@
                     }
                     return;
                 }
-                
+
                 // If no item is selected but autocomplete is open, try to auto-select
                 if (state && state.matches.length > 0) {
                     const input = document.getElementById(inputId);
                     const inputValue = input.value.toUpperCase();
-                    
+
                     // Check for exact match
                     const exactMatch = state.matches.find(code => code === inputValue);
                     if (exactMatch) {
                         event.preventDefault();
                         selectDriver(inputId, exactMatch);
-                        
+
                         // Focus save button if this is the last input
                         if (saveBtnId) {
                             setTimeout(() => {
@@ -1425,12 +1425,12 @@
                         }
                         return;
                     }
-                    
+
                     // If only one match, select it
                     if (state.matches.length === 1) {
                         event.preventDefault();
                         selectDriver(inputId, state.matches[0]);
-                        
+
                         // Focus save button if this is the last input
                         if (saveBtnId) {
                             setTimeout(() => {
@@ -1442,13 +1442,13 @@
                         }
                         return;
                     }
-                    
+
                     // Otherwise just close autocomplete and allow normal Tab
                     const dropdown = document.getElementById(inputId + '-autocomplete');
                     dropdown.classList.add('hidden');
                     autocompleteState[inputId] = null;
                 }
-                
+
                 // Focus save button if this is the last input
                 if (saveBtnId) {
                     event.preventDefault();
@@ -1460,7 +1460,7 @@
                 // Otherwise allow default Tab behavior
                 return;
             }
-            
+
             // Handle other keys with autocomplete
             handleAutocompleteKeydown(event, inputId);
         }
@@ -1483,7 +1483,7 @@
             const dropdown = document.getElementById(inputId + '-autocomplete');
             dropdown.classList.add('hidden');
             autocompleteState[inputId] = null;
-            
+
             // Move focus to next field after selection
             const form = input.closest('form') || input.closest('.grid');
             if (form) {
@@ -1496,7 +1496,7 @@
                 }
             }
         }
-        
+
         function isValidDriverCode(code) {
             if (!code || code.trim() === '') return true; // Empty is valid (no input yet)
             return DRIVERS.hasOwnProperty(code.toUpperCase());
@@ -1504,7 +1504,7 @@
 
         function renderBetsTable(race, eventOrder) {
             const isMobile = window.innerWidth < 768;
-            
+
             if (isMobile) {
                 return `
                     <div class="space-y-3">
@@ -1549,7 +1549,7 @@
                     </div>
                 `;
             }
-            
+
             return `
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <table class="w-full border-collapse table-fixed">
@@ -1583,11 +1583,11 @@
         }
 
         function calculateParticipantPoints(race, participant) {
-            const bet = race.bets[participant];
+            const bet = participant && race?.bets && Object.keys(race.bets).length > 0 ? race.bets[participant] : undefined;
             if (!bet) return 0;
-            
+
             let points = 0;
-            
+
             if (race.hasSprint && bet.sprintQualifying && race.results.sprintQualifying) {
                 points += calculatePointsQualifying(bet.sprintQualifying, race.results.sprintQualifying);
             }
@@ -1600,7 +1600,7 @@
             if (bet.race && race.results.race) {
                 points += calculatePointsRace(bet.race, race.results.race);
             }
-            
+
             return points;
         }
 
@@ -1612,7 +1612,7 @@
             if (!isEditing) {
                 const displayParts = [];
                 let hasInvalidCode = false;
-                
+
                 for (let i = 0; i < 3; i++) {
                     if (betData[i]) {
                         if (!isValidDriverCode(betData[i])) {
@@ -1625,10 +1625,10 @@
                     }
                 }
                 const displayText = displayParts.length > 0 ? displayParts.join(' ') : '-';
-                
+
                 // Add red border if there are invalid codes
                 const containerClass = hasInvalidCode ? 'border-2 border-red-600 rounded p-2' : '';
-                
+
                 return `
                     <div class="flex items-center gap-2 ${containerClass}">
                         <div class="flex-1 text-sm break-all">${displayText}</div>
@@ -1646,8 +1646,8 @@
                 <div class="flex flex-col gap-2">
                     <div class="grid grid-cols-3 gap-1">
                         ${[0, 1, 2].map(i => renderAutocompleteInput(
-                            `bet-${category}-${i}`, 
-                            betData[i] || '', 
+                            `bet-${category}-${i}`,
+                            betData[i] || '',
                             `${i + 1}.`,
                             'bet',
                             i === 2 ? `save-btn-${race.id}-${participant}-${category}` : null
@@ -1675,7 +1675,7 @@
             expandedRaces[raceId] = !expandedRaces[raceId];
             render();
         }
-        
+
         function toggleBet(betKey) {
             expandedBets[betKey] = !expandedBets[betKey];
             render();
@@ -1684,10 +1684,10 @@
         function addParticipant() {
             const input = document.getElementById('newParticipant');
             const name = input.value.trim();
-            
+
             if (name && !participants.includes(name)) {
                 participants.push(name);
-                
+
                 // Ha volt korábban törölt adata, állítsuk vissza
                 if (deletedParticipantsData[name]) {
                     races.forEach(race => {
@@ -1696,10 +1696,10 @@
                         }
                     });
                 }
-                
+
                 // Map this device to the participant name
                 updateDeviceMapping(name);
-                
+
                 logActivity('RÉSZTVEVŐ HOZZÁADVA', `${name} hozzáadva`);
                 saveData();
                 render();
@@ -1717,7 +1717,7 @@
                         delete race.bets[name];
                     }
                 });
-                
+
                 participants = participants.filter(p => p !== name);
                 logActivity('RÉSZTVEVŐ TÖRÖLVE', `${name} törölve`);
                 saveData();
@@ -1728,17 +1728,17 @@
         function startEditingBet(raceId, participant, category) {
             const race = races.find(r => r.id === raceId);
             if (!race) return;
-            
+
             // Check if results are already entered for this category
             const results = race.results[category];
             if (results && results.some(r => r)) {
                 alert('Késő sajnos.\nMár rögzítve van az esemény eredménye.');
                 return;
             }
-            
+
             editingBet = { raceId, participant, category };
             render();
-            
+
             // Auto-focus the first input field after render
             setTimeout(() => {
                 const firstInput = document.getElementById(`bet-${category}-0`);
@@ -1761,7 +1761,7 @@
             if (!race.bets[participant]) {
                 race.bets[participant] = {};
             }
-            
+
             // Csak az adott kategória adatait gyűjtsük össze és alakítsuk nagybetűssé
             race.bets[participant][category] = [
                 (document.getElementById(`bet-${category}-0`)?.value || '').toUpperCase(),
@@ -1778,7 +1778,7 @@
         function startEditingResults(raceId, category) {
             editingResults = { raceId, category };
             render();
-            
+
             // Auto-focus the first input field after render
             setTimeout(() => {
                 const firstInput = document.getElementById(`result-${category}-0`);
@@ -1819,7 +1819,7 @@
                     });
                 }
             });
-            
+
             // Escape key to cancel editing
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
@@ -1831,7 +1831,7 @@
                     }
                 }
             });
-            
+
             // Enter key on password input
             const passwordInput = document.getElementById('passwordInput');
             if (passwordInput) {

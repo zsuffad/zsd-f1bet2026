@@ -461,7 +461,7 @@
                     Object.keys(data).forEach((raceId) => {
                         if (!data[raceId].bets) {
                             data[raceId].bets = participants.reduce((bets, participant) => {
-                                bets[participant] = null; // Initialize each participant's bet to null
+                                bets[participant] = {};
                                 return bets;
                             }, {});
                             updated = true;
@@ -1778,6 +1778,9 @@
             // Ha még nincs bet objektum a résztvevőnek, hozzuk létre
             if (!race || !race.bets || Object.keys(race.bets).length < 1 ) {
                 race.bets = {};
+                // race.bets[participant] = {};
+            }
+            if (!race.bets[participant]) {
                 race.bets[participant] = {};
             }
 
